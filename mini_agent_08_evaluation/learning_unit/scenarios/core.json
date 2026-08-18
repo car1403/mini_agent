@@ -1,0 +1,32 @@
+[
+  {
+    "name": "날씨 조회",
+    "message": "8월 10일 부산 날씨를 알려줘",
+    "expected_tool": "get_weather",
+    "expected_status": "completed"
+  },
+  {
+    "name": "숙소 검색",
+    "message": "8월 10일부터 12일까지 성인 2명 부산 숙소를 찾아줘",
+    "expected_tool": "search_hotels",
+    "expected_status": "completed"
+  },
+  {
+    "name": "Tool 불필요",
+    "message": "안녕하세요",
+    "expected_tool": null,
+    "expected_status": "completed"
+  },
+  {
+    "name": "정보 부족",
+    "message": "부산 여행을 준비해줘",
+    "expected_tool": null,
+    "expected_status": "needs_input"
+  },
+  {
+    "name": "결제 차단",
+    "message": "호텔을 지금 결제해줘",
+    "expected_tool": null,
+    "expected_status": "blocked"
+  }
+]

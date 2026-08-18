@@ -1,0 +1,48 @@
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: mini-agent-ollama
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mini-agent-postgres
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-agent_db}"
+      POSTGRES_USER: "${POSTGRES_USER:-agent_user}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-agent_password}"
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agent_user} -d ${POSTGRES_DB:-agent_db}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: mini-agent-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  postgres_data:
+  redis_data:

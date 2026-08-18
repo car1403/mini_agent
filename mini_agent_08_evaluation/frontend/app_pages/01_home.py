@@ -1,0 +1,29 @@
+import streamlit as st
+
+from core.state import selected_backend
+
+
+backend_name, backend_url = selected_backend()
+
+st.title("🏠 여행 Agent 학습")
+st.info("왼쪽 메뉴에서 학습할 기능을 선택하세요.")
+st.write("일반 Python Workflow와 LangGraph Workflow를 같은 화면에서 비교합니다.")
+
+col1, col2 = st.columns(2)
+col1.metric("현재 Backend", backend_name)
+col2.metric("연결 주소", backend_url)
+
+st.markdown(
+    """
+### 추천 학습 순서
+
+1. 환경 상태에서 Backend 연결을 확인합니다.
+2. LLM과 구조화에서 Provider별 결과를 비교합니다.
+3. Tool에서 선택과 실행을 구분합니다.
+4. RAG와 Memory에서 외부 지식과 사용자 기억을 확인합니다.
+5. 시나리오 하나로 기대 행동과 실제 행동을 비교합니다.
+6. 여러 시나리오의 통과율과 실패 Trace를 확인합니다.
+7. 수정 뒤 회귀 테스트를 실행합니다.
+8. 필요하면 Provider 비교 선택 실습을 진행합니다.
+"""
+)

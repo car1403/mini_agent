@@ -1,0 +1,9 @@
+{
+    "python-envs.pythonProjects": [
+        {
+            "path": "mini_agent_01_llm",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ]
+}

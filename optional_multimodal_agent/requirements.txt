@@ -1,0 +1,15 @@
+fastapi
+google-genai
+httpx
+langgraph
+openai
+ollama
+pgvector
+psycopg[binary]
+pydantic
+python-multipart
+python-dotenv
+redis
+streamlit
+uvicorn
+pytest
