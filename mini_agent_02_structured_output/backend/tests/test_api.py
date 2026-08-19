@@ -21,6 +21,13 @@ def test_provider_list_does_not_expose_keys() -> None:
         "mock", "gemini", "openai", "ollama"
     ]
     assert "api_key" not in response.text.lower()
+    assert response.json()["providers"][0]["model"] == "deterministic-structured-mock"
+
+
+def test_openapi_exposes_generic_structured_route_only() -> None:
+    paths = client.get("/openapi.json").json()["paths"]
+    assert "/api/structured/generate" in paths
+    assert "/api/structured/travel-plan" not in paths
 
 
 def test_prompt_preview_keeps_four_sections() -> None:
@@ -31,6 +38,18 @@ def test_prompt_preview_keeps_four_sections() -> None:
     assert all(title in response.json()["prompt"] for title in (
         "[Role]", "[Instruction]", "[Context]", "[Constraint]"
     ))
+
+
+def test_prompt_preview_adds_optional_output_format() -> None:
+    response = client.post("/api/prompts/preview", json={
+        "role": "회의 기록자",
+        "instruction": "결정 사항 정리",
+        "context": "프로젝트 회의",
+        "constraint": "추측 금지",
+        "output_format": "결정 사항과 할 일 목록",
+    })
+    assert response.status_code == 200
+    assert "[Output Format]" in response.json()["prompt"]
 
 
 def test_travel_plan_validation_success() -> None:
@@ -53,12 +72,65 @@ def test_travel_plan_validation_reports_range_and_extra_field() -> None:
     assert {item["field"] for item in body["errors"]} >= {"recommended_days", "activities", "password"}
 
 
+def test_support_ticket_validation_success() -> None:
+    response = client.post("/api/structured/validate", json={
+        "schema_type": "support_ticket",
+        "payload": {
+            "category": "billing",
+            "priority": "medium",
+            "summary": "중복 결제 확인 요청",
+            "requires_human": True,
+            "missing_information": ["주문 번호"],
+        },
+    })
+    assert response.status_code == 200
+    assert response.json()["schema_type"] == "support_ticket"
+    assert response.json()["valid"] is True
+
+
+def test_support_ticket_validation_rejects_literals_and_extra_field() -> None:
+    response = client.post("/api/structured/validate", json={
+        "schema_type": "support_ticket",
+        "payload": {
+            "category": "refund",
+            "priority": "urgent",
+            "summary": "환불 요청",
+            "requires_human": True,
+            "missing_information": [],
+            "password": "secret",
+        },
+    })
+    assert response.status_code == 200
+    fields = {item["field"] for item in response.json()["errors"]}
+    assert fields >= {"category", "priority", "password"}
+
+
 def test_mock_structured_output_matches_contract() -> None:
-    response = client.post("/api/structured/travel-plan", json={
+    response = client.post("/api/structured/generate", json={
         "provider": "mock", "message": "제주 2박 3일 여행을 추천해 주세요."
     })
     assert response.status_code == 200
     assert response.json()["content"]["destination"] == "제주"
+
+
+def test_mock_support_ticket_matches_contract() -> None:
+    response = client.post("/api/structured/generate", json={
+        "provider": "mock",
+        "schema_type": "support_ticket",
+        "message": "결제가 두 번 된 것 같습니다.",
+    })
+    assert response.status_code == 200
+    assert response.json()["schema_type"] == "support_ticket"
+    assert response.json()["content"]["category"] == "billing"
+
+
+def test_legacy_travel_plan_route_remains_compatible() -> None:
+    response = client.post("/api/structured/travel-plan", json={
+        "provider": "mock", "message": "강릉 여행을 추천해 주세요."
+    })
+    assert response.status_code == 200
+    assert response.json()["schema_type"] == "travel_plan"
+    assert response.json()["content"]["destination"] == "강릉"
 
 
 def test_structured_compare_keeps_provider_errors() -> None:

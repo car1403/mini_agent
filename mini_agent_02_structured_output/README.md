@@ -15,12 +15,26 @@ Prompt 네 부분
 
 - Role, Instruction, Context, Constraint Prompt 조립
 - 정상 JSON, 잘못된 범위, 계약에 없는 필드 검증
-- `TravelPlan` Pydantic Schema
-- Mock·Gemini·GPT·Ollama/Llama Structured Output
+- 생성형 `TravelPlan`과 분류형 `SupportTicket` Pydantic Schema
+- Prompt 구성 화면의 여행·고객 지원·회의 예제
+- Template, Zero/Few-shot, 구분자, 메시지 역할, Before/After 실제 호출 예제
+- Prompt 구성 화면의 Output Format과 Before/After 실제 응답 비교
+- Schema별 JSON 검증과 입력 예제
+- Schema를 선택하는 Mock·Gemini·GPT·Ollama/Llama Structured Output
 - Provider별 성공, 지연 시간, 실패 비교
 
 기본 Provider는 `mock`입니다. API Key나 Ollama 없이도 모든 개념과 완성 화면을
 확인한 다음 실제 Provider를 선택적으로 연결할 수 있습니다.
+
+## Structured Output API
+
+- `POST /api/structured/validate`: 선택한 Schema로 일반 JSON을 검증합니다.
+- `POST /api/structured/generate`: 선택한 Schema로 한 Provider의 결과를 생성합니다.
+- `POST /api/structured/compare`: 여러 Provider의 동일 Schema 결과를 비교합니다.
+
+요청의 `schema_type`은 `travel_plan` 또는 `support_ticket`입니다. 이전 실습과의
+호환성을 위해 `/api/structured/travel-plan`도 유지하지만, 새 코드에서는 범용
+`/api/structured/generate`를 사용합니다.
 
 ## 실행
 

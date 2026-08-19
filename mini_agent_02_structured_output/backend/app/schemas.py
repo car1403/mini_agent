@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 ProviderName = Literal["mock", "gemini", "openai", "ollama"]
+StructuredSchemaName = Literal["travel_plan", "support_ticket"]
 
 
 class MessageRequest(BaseModel):
@@ -76,6 +77,7 @@ class PromptPreviewRequest(BaseModel):
     instruction: str = Field(min_length=1, max_length=1000)
     context: str = Field(min_length=1, max_length=1000)
     constraint: str = Field(min_length=1, max_length=1000)
+    output_format: str = Field(default="", max_length=1000)
 
 
 class PromptPreviewResult(PromptPreviewRequest):
@@ -92,31 +94,45 @@ class TravelPlan(BaseModel):
     cautions: list[str] = Field(default_factory=list, max_length=10)
 
 
-class TravelValidationRequest(BaseModel):
+class SupportTicket(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    category: Literal["billing", "technical", "account", "other"]
+    priority: Literal["low", "medium", "high"]
+    summary: str = Field(min_length=1, max_length=300)
+    requires_human: bool = Field(strict=True)
+    missing_information: list[str] = Field(default_factory=list, max_length=10)
+
+
+class StructuredValidationRequest(BaseModel):
+    schema_type: StructuredSchemaName = "travel_plan"
     payload: dict[str, Any]
 
 
-class TravelValidationResult(BaseModel):
+class StructuredValidationResult(BaseModel):
+    schema_type: StructuredSchemaName
     valid: bool
-    data: TravelPlan | None = None
+    data: TravelPlan | SupportTicket | None = None
     errors: list[dict[str, Any]] = Field(default_factory=list)
 
 
-class StructuredTravelRequest(MessageRequest):
+class StructuredOutputRequest(MessageRequest):
     provider: ProviderName | None = None
+    schema_type: StructuredSchemaName = "travel_plan"
     system_prompt: str = Field(
         default=(
-            "당신은 여행 계획 도우미입니다. 제공된 TravelPlan Schema에 맞춰 "
-            "안전하고 간결한 여행 계획을 작성하세요."
+            "당신은 사용자 요청 분석 도우미입니다. 제공된 Pydantic Schema에 맞춰 "
+            "추측을 피하고 안전하고 간결한 결과를 작성하세요."
         ),
         max_length=2000,
     )
 
 
-class StructuredTravelResult(BaseModel):
+class StructuredOutputResult(BaseModel):
     provider: ProviderName
     model: str
-    content: TravelPlan
+    schema_type: StructuredSchemaName
+    content: TravelPlan | SupportTicket
     latency_ms: int
 
 
@@ -124,10 +140,11 @@ class StructuredCompareRequest(MessageRequest):
     providers: list[ProviderName] = Field(
         default_factory=lambda: ["mock"], min_length=1, max_length=4
     )
+    schema_type: StructuredSchemaName = "travel_plan"
     system_prompt: str = Field(
         default=(
-            "당신은 여행 계획 도우미입니다. 제공된 TravelPlan Schema에 맞춰 "
-            "안전하고 간결한 여행 계획을 작성하세요."
+            "당신은 사용자 요청 분석 도우미입니다. 제공된 Pydantic Schema에 맞춰 "
+            "추측을 피하고 안전하고 간결한 결과를 작성하세요."
         ),
         max_length=2000,
     )
@@ -137,7 +154,8 @@ class StructuredComparisonItem(BaseModel):
     provider: ProviderName
     status: Literal["success", "error"]
     model: str = ""
-    content: TravelPlan | None = None
+    schema_type: StructuredSchemaName
+    content: TravelPlan | SupportTicket | None = None
     latency_ms: int = 0
     error: str | None = None
 

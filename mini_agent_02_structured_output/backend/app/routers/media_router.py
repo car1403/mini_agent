@@ -4,7 +4,7 @@ from app.schemas import TtsRequest
 from app.services.media_service import analyze_image, create_speech
 
 
-media_router = APIRouter(prefix="/api/media", tags=["Multimodal"])
+media_router = APIRouter(prefix="/api/media", tags=["01. LLM to Agent"])
 
 
 @media_router.post("/image-analysis")
