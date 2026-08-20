@@ -26,6 +26,24 @@ def get_structured_model(
     return {"travel_plan": TravelPlan, "support_ticket": SupportTicket}[schema_type]
 
 
+def _gemini_response_schema(schema_type: StructuredSchemaName) -> dict[str, Any]:
+    """Return the Pydantic JSON schema without Gemini-unsupported keywords."""
+    schema = get_structured_model(schema_type).model_json_schema()
+
+    def remove_unsupported(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {
+                key: remove_unsupported(item)
+                for key, item in value.items()
+                if key not in {"additionalProperties", "$schema"}
+            }
+        if isinstance(value, list):
+            return [remove_unsupported(item) for item in value]
+        return value
+
+    return remove_unsupported(schema)
+
+
 def generate_structured_mock(
     system_prompt: str, message: str, schema_type: StructuredSchemaName
 ) -> ProviderResult:
@@ -126,7 +144,7 @@ def generate_structured_gemini(
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
             response_mime_type="application/json",
-            response_schema=get_structured_model(schema_type),
+            response_schema=_gemini_response_schema(schema_type),
         ),
     )
     parsed = get_structured_model(schema_type).model_validate_json(response.text or "{}")

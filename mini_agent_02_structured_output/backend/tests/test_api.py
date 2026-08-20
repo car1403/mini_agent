@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.providers import _gemini_response_schema
 from app.schemas import TravelImageAnalysis
 
 
@@ -122,6 +123,22 @@ def test_mock_support_ticket_matches_contract() -> None:
     assert response.status_code == 200
     assert response.json()["schema_type"] == "support_ticket"
     assert response.json()["content"]["category"] == "billing"
+
+
+def test_gemini_schema_removes_unsupported_additional_properties() -> None:
+    def all_keys(value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                yield key
+                yield from all_keys(item)
+        elif isinstance(value, list):
+            for item in value:
+                yield from all_keys(item)
+
+    for schema_type in ("travel_plan", "support_ticket"):
+        schema = _gemini_response_schema(schema_type)
+        assert "additionalProperties" not in set(all_keys(schema))
+        assert set(schema["required"])
 
 
 def test_legacy_travel_plan_route_remains_compatible() -> None:
