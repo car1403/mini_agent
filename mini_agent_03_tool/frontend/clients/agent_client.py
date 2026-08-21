@@ -73,6 +73,15 @@ def complete_tool_loop(message: str, tool_choice: str = "auto"):
     return request("POST", "/api/tools/complete", json=payload)
 
 
+def run_lab(message: str, session_id: str, lab_id: str, arguments: dict[str, Any], confirmed: bool = False, action_id: str | None = None):
+    payload = {"message": message, "session_id": session_id, "lab_id": lab_id, "arguments": arguments, "confirmed": confirmed, "action_id": action_id}
+    return request("POST", "/api/labs/run", json=payload)
+
+
+def reset_labs():
+    return request("POST", "/api/labs/reset", json={})
+
+
 def upload_image(filename: str, content: bytes, content_type: str, question: str):
     files = {"image": (filename, content, content_type)}
     data = {"question": question}

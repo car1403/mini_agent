@@ -74,3 +74,22 @@ WEATHER_MODE=open_meteo
 Open-Meteo의 현재 상태는 관측소 실측값이 아니라 최신 기상 모델 기반 값입니다.
 외부 API 오류가 발생하면 실제 값처럼 Mock으로 조용히 대체하지 않고 Tool 오류를
 반환합니다.
+# Tool Use 통합 Labs
+
+Frontend의 `3-7. 통합 Labs`에서는 일곱 가지 Tool Use 사례를 하나의 API로 실행합니다.
+
+```text
+POST /api/labs/run
+→ lab_id=auto이면 Ollama Structured Output으로 Lab 분류
+→ Backend Allowlist에서 Handler 선택
+→ 결정적 Workflow 또는 상태 기반 Agent 실행
+→ In-memory Mock Repository와 Trace 반환
+```
+
+- Workflow: 주차장, 에어컨, 택배함, 재고
+- Agent: 카페 주문, 도서 대출, 여행 준비
+- 상태 변경은 사용자의 `confirmed=true` 확인 후에만 실행합니다.
+- `parking_entry_agent`, `air_conditioner_agent`, `parcel_locker_agent`, `inventory_reservation_agent`가 자연어 arguments를 추출한 뒤 Pydantic과 Backend 정책으로 다시 검증합니다.
+- 확인 전 검증된 작업은 만료되는 `pending_action`으로 저장하며 확인 시 Ollama를 다시 호출하지 않습니다.
+- 명시적인 `lab_id`는 재현 가능한 실습을 위해 Ollama 분류를 건너뜁니다.
+- Repository 데이터는 교육용 Mock이며 Backend를 재시작하면 초기화됩니다.
