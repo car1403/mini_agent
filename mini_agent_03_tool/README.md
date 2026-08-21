@@ -82,14 +82,22 @@ Frontend의 `3-7. 통합 Labs`에서는 일곱 가지 Tool Use 사례를 하나�
 POST /api/labs/run
 → lab_id=auto이면 Ollama Structured Output으로 Lab 분류
 → Backend Allowlist에서 Handler 선택
-→ 결정적 Workflow 또는 상태 기반 Agent 실행
+→ Agent-assisted Workflow 또는 Agent-controlled Loop 실행
 → In-memory Mock Repository와 Trace 반환
 ```
 
-- Workflow: 주차장, 에어컨, 택배함, 재고
-- Agent: 카페 주문, 도서 대출, 여행 준비
+- Agent-assisted Workflow: 주차장, 에어컨, 택배함, 재고
+- Agent-controlled Loop: 카페 주문, 도서 대출, 여행 준비
 - 상태 변경은 사용자의 `confirmed=true` 확인 후에만 실행합니다.
-- `parking_entry_agent`, `air_conditioner_agent`, `parcel_locker_agent`, `inventory_reservation_agent`가 자연어 arguments를 추출한 뒤 Pydantic과 Backend 정책으로 다시 검증합니다.
+- 도메인 Agent가 자연어 arguments를 추출한 뒤 Pydantic과 Backend 정책으로 다시 검증합니다.
 - 확인 전 검증된 작업은 만료되는 `pending_action`으로 저장하며 확인 시 Ollama를 다시 호출하지 않습니다.
 - 명시적인 `lab_id`는 재현 가능한 실습을 위해 Ollama 분류를 건너뜁니다.
 - Repository 데이터는 교육용 Mock이며 Backend를 재시작하면 초기화됩니다.
+
+## 통합 Lab 설계 문서
+
+1. [Tool Use Lab 아키텍처](./docs/01_lab-architecture.md)
+2. [Agent와 Workflow 구분](./docs/02_agent-vs-workflow.md)
+3. [Routing Agent와 Handler Allowlist](./docs/03_routing-and-allowlist.md)
+4. [Pending Action과 사용자 확인](./docs/04_pending-action-and-confirmation.md)
+5. [일곱 가지 Tool Use 시나리오](./docs/05_lab-scenarios.md)
