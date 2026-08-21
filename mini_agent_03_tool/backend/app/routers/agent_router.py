@@ -25,30 +25,34 @@ from app.tools.definitions import get_tool_definitions
 from app.tools.travel_tools import run_tool
 
 
-agent_router = APIRouter(tags=["Agent"])
+agent_router = APIRouter()
+
+UNIT_01_TAG = "01. LLM to Agent"
+UNIT_02_TAG = "02. Prompt & Structured Output"
+UNIT_03_TAG = "03. Tool Use"
 
 
-@agent_router.get("/health")
+@agent_router.get("/health", tags=[UNIT_01_TAG])
 def health() -> dict:
     return {"status": "ok", "stage": "mini_agent_03_tool", "default_provider": settings.llm_provider}
 
 
-@agent_router.get("/api/providers")
+@agent_router.get("/api/providers", tags=[UNIT_01_TAG])
 def providers() -> dict:
     return {"default_provider": settings.llm_provider, "providers": provider_status()}
 
 
-@agent_router.post("/api/concepts/compare", response_model=ConceptCompareResult)
+@agent_router.post("/api/concepts/compare", response_model=ConceptCompareResult, tags=[UNIT_01_TAG])
 def compare_concepts(payload: MessageRequest) -> ConceptCompareResult:
     return ConceptCompareResult.model_validate(compare_decisions(payload.message))
 
 
-@agent_router.post("/api/travel/classify", response_model=TravelIntentResult)
+@agent_router.post("/api/travel/classify", response_model=TravelIntentResult, tags=[UNIT_01_TAG])
 def classify_travel(payload: MessageRequest) -> TravelIntentResult:
     return TravelIntentResult.model_validate(classify_travel_request(payload.message))
 
 
-@agent_router.post("/api/generate", response_model=GenerateResult)
+@agent_router.post("/api/generate", response_model=GenerateResult, tags=[UNIT_01_TAG])
 def create_response(payload: GenerateRequest) -> GenerateResult:
     selected = payload.provider or settings.llm_provider
     try:
@@ -59,7 +63,7 @@ def create_response(payload: GenerateRequest) -> GenerateResult:
         raise HTTPException(status_code=502, detail=f"{selected} 실제 연결에 실패했습니다: {error}") from error
 
 
-@agent_router.post("/api/providers/compare", response_model=ProviderCompareResult)
+@agent_router.post("/api/providers/compare", response_model=ProviderCompareResult, tags=[UNIT_01_TAG])
 def compare_providers(payload: ProviderCompareRequest) -> ProviderCompareResult:
     items: list[ProviderComparisonItem] = []
     for selected in payload.providers:
@@ -71,12 +75,12 @@ def compare_providers(payload: ProviderCompareRequest) -> ProviderCompareResult:
     return ProviderCompareResult(request_count=len(payload.providers), results=items)
 
 
-@agent_router.post("/api/prompts/preview", response_model=PromptPreviewResult)
+@agent_router.post("/api/prompts/preview", response_model=PromptPreviewResult, tags=[UNIT_02_TAG])
 def preview_prompt(payload: PromptPreviewRequest) -> PromptPreviewResult:
     return PromptPreviewResult(**payload.model_dump(), prompt=build_prompt(payload.role, payload.instruction, payload.context, payload.constraint))
 
 
-@agent_router.post("/api/structured/validate", response_model=TravelValidationResult)
+@agent_router.post("/api/structured/validate", response_model=TravelValidationResult, tags=[UNIT_02_TAG])
 def validate_travel_plan(payload: TravelValidationRequest) -> TravelValidationResult:
     try:
         return TravelValidationResult(valid=True, data=TravelPlan.model_validate(payload.payload))
@@ -85,7 +89,7 @@ def validate_travel_plan(payload: TravelValidationRequest) -> TravelValidationRe
         return TravelValidationResult(valid=False, errors=errors)
 
 
-@agent_router.post("/api/structured/travel-plan", response_model=StructuredTravelResult)
+@agent_router.post("/api/structured/travel-plan", response_model=StructuredTravelResult, tags=[UNIT_02_TAG])
 def create_structured_travel_plan(payload: StructuredTravelRequest) -> StructuredTravelResult:
     selected = payload.provider or settings.llm_provider
     try:
@@ -97,7 +101,7 @@ def create_structured_travel_plan(payload: StructuredTravelRequest) -> Structure
         raise HTTPException(status_code=502, detail=f"{selected} 구조화 출력에 실패했습니다: {error}") from error
 
 
-@agent_router.post("/api/structured/compare", response_model=StructuredCompareResult)
+@agent_router.post("/api/structured/compare", response_model=StructuredCompareResult, tags=[UNIT_02_TAG])
 def compare_structured_outputs(payload: StructuredCompareRequest) -> StructuredCompareResult:
     items: list[StructuredComparisonItem] = []
     for selected in payload.providers:
@@ -109,7 +113,7 @@ def compare_structured_outputs(payload: StructuredCompareRequest) -> StructuredC
     return StructuredCompareResult(request_count=len(payload.providers), results=items)
 
 
-@agent_router.post("/api/media/image-analysis")
+@agent_router.post("/api/media/image-analysis", tags=[UNIT_01_TAG])
 async def image_analysis(image: UploadFile = File(...), question: str = Form("여행자가 알아야 할 정보와 주의점을 알려주세요.")) -> dict:
     try:
         return analyze_image(image.content_type or "", await image.read(), question).model_dump()
@@ -119,7 +123,7 @@ async def image_analysis(image: UploadFile = File(...), question: str = Form("�
         raise HTTPException(status_code=502, detail=f"이미지 분석 실패: {error}") from error
 
 
-@agent_router.post("/api/media/tts")
+@agent_router.post("/api/media/tts", tags=[UNIT_01_TAG])
 def text_to_speech(payload: TtsRequest) -> Response:
     try:
         return Response(content=create_speech(payload.text, payload.voice, payload.instructions), media_type="audio/mpeg", headers={"X-Synthetic-Voice": "true"})
@@ -129,12 +133,12 @@ def text_to_speech(payload: TtsRequest) -> Response:
         raise HTTPException(status_code=502, detail=f"TTS 생성 실패: {error}") from error
 
 
-@agent_router.get("/api/tools")
+@agent_router.get("/api/tools", tags=[UNIT_03_TAG])
 def tools() -> dict:
     return {"tools": get_tool_definitions(), "note": "모든 Tool은 조회 전용이며 예약이나 결제를 실행하지 않습니다."}
 
 
-@agent_router.post("/api/tools/select", response_model=ToolSelectionResult)
+@agent_router.post("/api/tools/select", response_model=ToolSelectionResult, tags=[UNIT_03_TAG])
 def choose_tool(payload: ToolSelectRequest) -> ToolSelectionResult:
     selected = payload.provider or settings.llm_provider
     try:
@@ -145,7 +149,7 @@ def choose_tool(payload: ToolSelectRequest) -> ToolSelectionResult:
         raise HTTPException(status_code=502, detail=f"{selected} Tool 선택에 실패했습니다: {error}") from error
 
 
-@agent_router.post("/api/tools/compare", response_model=ToolCompareResult)
+@agent_router.post("/api/tools/compare", response_model=ToolCompareResult, tags=[UNIT_03_TAG])
 def compare_tool_selection(payload: ToolCompareRequest) -> ToolCompareResult:
     items: list[ToolComparisonItem] = []
     for selected in payload.providers:
@@ -157,7 +161,7 @@ def compare_tool_selection(payload: ToolCompareRequest) -> ToolCompareResult:
     return ToolCompareResult(request_count=len(payload.providers), results=items)
 
 
-@agent_router.post("/api/tools/run", response_model=ToolRunResult)
+@agent_router.post("/api/tools/run", response_model=ToolRunResult, tags=[UNIT_03_TAG])
 def execute_tool(payload: ToolRunRequest) -> ToolRunResult:
     return _run_tool_safely(payload.tool_name, payload.arguments)
 
@@ -174,7 +178,7 @@ def _run_tool_safely(tool_name: str, arguments: dict) -> ToolRunResult:
         return ToolRunResult(success=False, tool_name=tool_name, error={"code": "TOOL_EXECUTION_ERROR", "message": str(error)})
 
 
-@agent_router.post("/api/tools/complete", response_model=ToolCompleteResult)
+@agent_router.post("/api/tools/complete", response_model=ToolCompleteResult, tags=[UNIT_03_TAG])
 def complete_tool_loop(payload: ToolCompleteRequest) -> ToolCompleteResult:
     selected = payload.provider or settings.llm_provider
     try:
