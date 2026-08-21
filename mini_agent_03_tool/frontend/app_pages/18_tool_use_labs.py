@@ -1,3 +1,10 @@
+"""7개 Lab의 Routing, Agent/Workflow, Tool, Trace를 한 화면에서 비교합니다.
+
+Frontend는 업무 정책이나 Tool을 실행하지 않습니다. 사용자의 명시적 Lab 선택 또는
+Ollama 자동 분류 요청을 Backend에 전달하고, 상태 변경 시 pending action ID를 다시
+보내는 확인 UI 역할만 담당합니다.
+"""
+
 import uuid
 import streamlit as st
 from clients.agent_client import reset_labs, run_lab
@@ -48,6 +55,8 @@ if right.button("모든 Mock 상태 초기화", use_container_width=True):
 
 if run_clicked:
     try:
+        # 확인 단계에서는 Backend가 발급한 action ID를 전달합니다. 화면의 arguments를
+        # 다시 신뢰하지 않으며 Backend도 저장된 검증값만 실행합니다.
         pending_action_id = st.session_state.lab_pending_actions.get(lab_id) if confirmed else None
         result = run_lab(message, st.session_state.lab_session_id, lab_id, arguments, confirmed, pending_action_id)
         if result["status"] == "confirmation_required" and result["state"].get("pending_action_id"):
