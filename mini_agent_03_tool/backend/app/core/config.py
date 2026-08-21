@@ -1,3 +1,8 @@
+"""환경 변수를 읽어 Backend 전체의 실행 설정을 제공합니다.
+
+Router, Provider, Service와 Tool은 `settings`를 import해 모델·외부 API·제한값을 조회합니다.
+"""
+
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -5,7 +10,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
 

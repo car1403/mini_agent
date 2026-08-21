@@ -14,14 +14,14 @@ validation = st.Page("app_pages/08_pydantic_validation.py", title="Pydantic 검�
 structured = st.Page("app_pages/09_structured_output.py", title="Structured Output")
 image_analysis = st.Page("app_pages/10_image_analysis.py", title="이미지 분석")
 tts = st.Page("app_pages/11_tts.py", title="음성 생성")
-tool_select = st.Page("app_pages/11_tool_select.py", title="Tool 선택")
-tool_run = st.Page("app_pages/12_tool_run.py", title="Tool 실행")
-tool_loop = st.Page("app_pages/13_tool_loop.py", title="Agent Loop")
-tool_schema = st.Page("app_pages/14_tool_schema.py", title="Tool Schema")
-tool_validation = st.Page("app_pages/15_tool_validation.py", title="Tool 입력 검증")
+tool_schema = st.Page("app_pages/12_tool_schema.py", title="Tool Schema")
+tool_select = st.Page("app_pages/13_tool_select.py", title="Tool 선택")
+tool_validation = st.Page("app_pages/14_tool_validation.py", title="Tool 입력 검증")
+tool_run = st.Page("app_pages/15_tool_run.py", title="Tool 실행")
 tool_errors = st.Page("app_pages/16_tool_errors.py", title="Tool 오류 처리")
+agent_cycle = st.Page("app_pages/17_agent_cycle.py", title="Agent Cycle")
 
-navigation = st.navigation([home, concept, travel, environment, llm, providers, image_analysis, tts, prompt, validation, structured, tool_schema, tool_select, tool_validation, tool_run, tool_errors, tool_loop], position="hidden")
+navigation = st.navigation([home, concept, travel, environment, llm, providers, image_analysis, tts, prompt, validation, structured, tool_schema, tool_select, tool_validation, tool_run, tool_errors, agent_cycle], position="hidden")
 
 with st.sidebar:
     st.title("🧰 Mini Agent 03")
@@ -50,7 +50,7 @@ with st.sidebar:
         st.page_link(tool_validation, label="3-3. Tool 입력 검증")
         st.page_link(tool_run, label="3-4. Tool 안전 실행")
         st.page_link(tool_errors, label="3-5. Tool 오류 처리")
-        st.page_link(tool_loop, label="3-6. Agent Loop")
+        st.page_link(agent_cycle, label="3-6. Agent Cycle")
 
     st.divider()
     st.caption("실행 환경")
