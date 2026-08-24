@@ -9,3 +9,4 @@ def extract_inventory_request(message: str, explicit_arguments: dict[str, Any] |
     values = dict(response.content); values.update({k: v for k, v in (explicit_arguments or {}).items() if v not in (None, "")})
     validated = InventoryInput.model_validate(values)
     return validated, {"stage": "inventory_agent_extraction", "provider": response.provider, "model": response.model, "latency_ms": response.latency_ms, "data": validated.model_dump()}
+

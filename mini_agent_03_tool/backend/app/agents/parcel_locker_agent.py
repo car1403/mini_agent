@@ -9,3 +9,4 @@ def extract_parcel_locker_request(message: str, explicit_arguments: dict[str, An
     values = dict(response.content); values.update({k: v for k, v in (explicit_arguments or {}).items() if v not in (None, "")})
     validated = ParcelLockerInput.model_validate(values)
     return validated, {"stage": "parcel_locker_agent_extraction", "provider": response.provider, "model": response.model, "latency_ms": response.latency_ms, "data": validated.model_dump()}
+

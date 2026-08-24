@@ -26,3 +26,4 @@ def classify_lab(message: str) -> LabRouteDecision:
 def explicit_decision(lab_id: str) -> LabRouteDecision:
     """사용자가 고른 Lab을 LLM 없이 결정적으로 표현해 실습 재현성을 보장합니다."""
     return LabRouteDecision(lab_id=lab_id, confidence=1.0, reason="사용자가 Lab을 명시적으로 선택했습니다.", provider="explicit", model="none")
+

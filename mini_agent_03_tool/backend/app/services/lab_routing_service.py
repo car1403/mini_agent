@@ -12,11 +12,10 @@
 """
 from app.agents.cafe_order_agent import run_cafe_order_agent
 from app.agents.lab_routing_agent import classify_lab, explicit_decision
-from app.agents.library_loan_agent import run_library_loan_agent
 from app.agents.travel_planning_agent import run_travel_planning_agent
 from app.repositories.lab_repository import lab_repository
 from app.schemas.lab import LabRunRequest, LabRunResponse
-from app.services import air_conditioner_service, inventory_service, parcel_locker_service, parking_service
+from app.services import air_conditioner_service, inventory_service, library_service, parcel_locker_service, parking_service
 
 AGENT_LABS = {"cafe", "library", "travel"}
 WORKFLOW_HANDLERS = {
@@ -44,10 +43,8 @@ def route_and_run(payload: LabRunRequest) -> LabRunResponse:
     if lab_id in WORKFLOW_HANDLERS:
         # Workflow Handler가 Agent 추출 → 검증 → 정책 → 확인 → Tool 순서를 소유합니다.
         outcome = WORKFLOW_HANDLERS[lab_id](payload)
-    elif lab_id == "library" and not payload.confirmed:
-        return LabRunResponse(lab_id=lab_id, execution_type="agent" if lab_id in AGENT_LABS else "workflow", status="confirmation_required", final_answer="상태가 변경되는 Mock 작업입니다. 실행을 확인해 주세요.", state=payload.arguments, termination_reason="confirmation_required", routing=routing)
     elif lab_id == "cafe": outcome = run_cafe_order_agent(payload.session_id, payload.message, payload.arguments)
-    elif lab_id == "library": outcome = run_library_loan_agent(payload.arguments)
+    elif lab_id == "library": outcome = library_service.run(payload)
     elif lab_id == "travel": outcome = run_travel_planning_agent(payload.session_id, payload.message, payload.arguments)
     # 서로 다른 Handler의 내부 표현을 Frontend가 공통으로 관찰할 수 있는 계약으로 바꿉니다.
     return LabRunResponse(lab_id=lab_id, execution_type="agent" if lab_id in AGENT_LABS else "workflow", status=outcome["status"], final_answer=outcome["answer"], state=outcome["state"], tool_calls=outcome["calls"], trace=outcome["trace"], termination_reason=outcome["reason"], routing=routing)

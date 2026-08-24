@@ -51,6 +51,45 @@ def test_cafe_keeps_arguments_between_cycles() -> None:
     assert first.json()["status"] == "needs_clarification"
     second = run("cafe", "미디엄 두 잔")
     assert second.json()["status"] == "completed"
+    assert second.json()["trace"][-1]["stage"] == "tool_execution"
+    assert second.json()["trace"][-1]["data"]["success"] is True
+
+def test_library_rejects_confirmation_without_pending_action() -> None:
+    response = run(
+        "library", "바로 대출", {"member_id": "M100", "book_id": "B101"},
+        confirmed=True,
+    )
+    assert response.json()["status"] == "rejected"
+    assert response.json()["termination_reason"] == "invalid_action"
+    assert lab_repository.books["B101"]["available"] is True
+
+def test_library_uses_dynamic_tools_and_one_time_confirmation() -> None:
+    arguments = {"member_id": "M100", "book_id": "B101"}
+    prepared = run("library", "도서를 대출하고 싶어", arguments).json()
+    assert prepared["status"] == "confirmation_required"
+    assert [call["tool"] for call in prepared["tool_calls"][:3]] == [
+        "get_member", "get_book", "get_current_loans",
+    ]
+    assert [item["stage"] for item in prepared["trace"] if item["stage"] == "tool_execution"] == [
+        "tool_execution", "tool_execution", "tool_execution",
+    ]
+    action_id = prepared["state"]["pending_action_id"]
+    confirmed = run("library", "확인", confirmed=True, action_id=action_id).json()
+    assert confirmed["status"] == "completed"
+    assert lab_repository.books["B101"]["available"] is False
+    repeated = run("library", "다시 확인", confirmed=True, action_id=action_id).json()
+    assert repeated["status"] == "rejected"
+    assert repeated["termination_reason"] == "invalid_action"
+
+def test_travel_trace_contains_actual_tool_executions() -> None:
+    response = run("travel", "내일 부산 여행").json()
+    assert response["status"] == "completed"
+    assert [call["tool"] for call in response["tool_calls"]] == [
+        "get_weather_forecast", "search_attractions",
+    ]
+    executions = [item for item in response["trace"] if item["stage"] == "tool_execution"]
+    assert len(executions) == 2
+    assert all(item["data"]["success"] for item in executions)
 
 def test_inventory_detects_version_conflict(monkeypatch) -> None:
     fake_ollama(monkeypatch)

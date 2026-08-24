@@ -29,6 +29,15 @@ examples = {
     "cafe": "라지 아메리카노 두 잔", "library": "M100 회원이 B101 도서를 대출하고 싶어",
     "inventory": "SKU-001 재고를 예약해 줘", "travel": "내일 부산 여행 준비물을 알려줘",
 }
+patterns = {
+    "parking": ("Agent-assisted Workflow", "Agent는 차량 번호만 추출하고 Backend가 출입 권한과 문 열기 순서를 결정합니다."),
+    "air_conditioner": ("Agent-assisted Workflow", "Agent는 온도만 추출하고 Backend 히스테리시스 규칙이 제어를 결정합니다."),
+    "parcel_locker": ("Agent-assisted Workflow", "Agent는 입력만 추출하고 Backend가 인증·만료·재사용을 검사합니다."),
+    "cafe": ("Agent-controlled Cycle", "Agent가 주문 상태를 유지하며 누락값 재질문 또는 Tool 실행 종료를 선택합니다."),
+    "library": ("Agent-controlled Loop + Backend Workflow", "Agent가 필요한 조회 Tool을 선택하고 Backend가 Pending Action과 대출 정책을 통제합니다."),
+    "inventory": ("Agent-assisted Workflow", "Agent는 예약값만 추출하고 Backend가 Version·수량을 재검증합니다."),
+    "travel": ("Read-only Multi-Tool Agent", "Agent가 날짜에 맞는 날씨 Tool과 관광지 Tool을 실행하고 결과를 종합합니다."),
+}
 
 lab_id = st.selectbox("Lab 선택", list(labels), format_func=labels.get)
 message = st.text_input("요청", value=examples[lab_id], key=f"lab_message_{lab_id}")
@@ -68,6 +77,13 @@ if run_clicked:
         else: st.info(result["final_answer"])
         a, b = st.columns(2)
         with a:
+            pattern, rationale = patterns.get(
+                result["lab_id"],
+                ("Routing clarification", "Lab을 확정하지 못해 Tool이나 상태 변경을 실행하지 않았습니다."),
+            )
+            st.subheader("실행 유형")
+            st.code(f"{result['execution_type']} · {pattern}")
+            st.caption(rationale)
             st.subheader("Routing"); st.json(result["routing"])
             st.subheader("Tool Calls"); st.json(result["tool_calls"])
         with b:

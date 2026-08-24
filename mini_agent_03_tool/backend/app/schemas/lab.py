@@ -78,3 +78,4 @@ class LabRunResponse(BaseModel):
     trace: list[dict[str, Any]] = Field(default_factory=list)
     termination_reason: str
     routing: LabRouteDecision | None = None
+

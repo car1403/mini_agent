@@ -5,6 +5,9 @@
 Tool 사용 여부로 Agent와 Workflow를 나누지 않습니다. **다음 단계와 종료 시점을 누가
 결정하는가**를 기준으로 구분합니다.
 
+Tool Use는 외부 기능을 안전하게 호출하는 방식이고, Workflow와 Agent는 Tool의 호출
+순서를 결정하는 방식입니다. 따라서 Tool을 사용한다고 자동으로 Agent가 되지는 않습니다.
+
 ```text
 Workflow: Backend 코드가 실행 순서를 소유
 Agent: 현재 상태를 보고 재질문·다음 Tool·종료를 선택
@@ -37,6 +40,28 @@ Agent는 유연한 입력 해석만 담당합니다. 출입 승인, 인증 성�
 
 Agent가 다음 행동을 선택해도 Tool Allowlist, arguments Schema와 Backend 정책은 항상
 적용됩니다.
+
+## 언제 무엇을 선택하는가?
+
+| 질문 | 권장 구조 |
+|---|---|
+| 외부 조회나 기능 실행이 필요한가? | 기능을 Tool로 캡슐화 |
+| 호출 순서와 분기를 코드로 정할 수 있는가? | Tool을 사용하는 Workflow |
+| 상태와 Tool Result에 따라 다음 행동이 달라지는가? | 제한된 Agent Loop |
+| 승인·인증·결제·출입·재고 변경인가? | Backend Workflow가 최종 결정 |
+| 자연어 입력만 유연하게 해석하면 되는가? | Agent-assisted Workflow |
+
+Agent를 도입하기 전에는 단순한 규칙 기반 Workflow로 해결 가능한지 먼저 확인합니다.
+Agent가 필요한 경우에도 Tool Allowlist, Pydantic 검증, 사용자 권한, Pending Action,
+최대 반복 횟수, 종료 조건과 Trace는 Backend가 소유합니다.
+
+## Agent를 사용하지 말아야 하는 경우
+
+- 같은 입력과 상태에 항상 같은 결과가 필요합니다.
+- 단순한 조건문으로 모든 분기를 명확하게 표현할 수 있습니다.
+- Transaction, 동시성 제어 또는 멱등성이 핵심입니다.
+- Agent가 실행할 Tool과 종료 조건을 제한할 수 없습니다.
+- 법적·금전적·보안상 중요한 결정을 LLM 출력만으로 확정하려 합니다.
 
 ## Lab 분류
 

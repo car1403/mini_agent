@@ -6,6 +6,7 @@
 import re
 from typing import Any
 from app.repositories.lab_repository import lab_repository
+from app.tools.lab_tools import execute_lab_tool
 
 def run_cafe_order_agent(session_id: str, message: str, arguments: dict[str, Any]) -> dict[str, Any]:
     """이전 arguments와 새 입력을 병합하고 누락값이 있으면 재질문합니다."""
@@ -27,4 +28,7 @@ def run_cafe_order_agent(session_id: str, message: str, arguments: dict[str, Any
         return {"status": "needs_clarification", "answer": f"다음 정보를 알려주세요: {', '.join(missing)}", "state": state.copy(), "trace": trace, "reason": "needs_user_input", "calls": []}
     # 모든 필수값이 모였을 때만 허용된 Mock Tool 호출을 제안하고 종료합니다.
     call = {"tool": "create_mock_order", "arguments": state.copy()}
-    return {"status": "completed", "answer": f"{state['size']} {state['menu']} {state['quantity']}잔 주문을 확인했습니다.", "state": state.copy(), "trace": trace + [{"stage": "tool_result", "data": {"accepted": True}}], "reason": "completed", "calls": [call]}
+    execution = execute_lab_tool(call["tool"], call["arguments"])
+    if not execution["success"]:
+        return {"status": "error", "answer": "주문 Tool 실행에 실패했습니다.", "state": state.copy(), "trace": trace + [{"stage": "tool_execution", "data": execution}], "reason": "tool_error", "calls": [call]}
+    return {"status": "completed", "answer": f"{state['size']} {state['menu']} {state['quantity']}잔 주문을 확인했습니다.", "state": state.copy(), "trace": trace + [{"stage": "tool_execution", "data": execution}], "reason": "completed", "calls": [call]}

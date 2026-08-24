@@ -65,3 +65,4 @@ Travel Agent → 도시·날짜 재질문 → 현재 날씨 또는 예보 → �
 - Tool 이름과 arguments
 - Backend 정책과 현재 Mock 상태
 - 전체 Trace와 종료 이유
+

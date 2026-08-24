@@ -30,3 +30,4 @@ def run(payload: LabRunRequest) -> dict:
 
 def _result(status, answer, reason, state=None, trace=None, actions=None):
     return {"status": status, "answer": answer, "state": state or {}, "trace": trace or [], "reason": reason, "calls": [{"tool": item["tool_name"], "arguments": item["arguments"]} for item in (actions or [])]}
+

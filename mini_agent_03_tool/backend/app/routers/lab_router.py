@@ -27,3 +27,4 @@ def run_lab(payload: LabRunRequest) -> LabRunResponse:
 def reset_labs() -> dict:
     """교육용 Mock 상태만 초기화합니다. 실제 외부 장치나 DB에는 접근하지 않습니다."""
     lab_repository.reset(); return {"reset": True, "note": "모든 In-memory Mock 상태를 초기화했습니다."}
+

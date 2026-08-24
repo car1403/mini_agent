@@ -16,7 +16,7 @@
 12. `learning_unit/10_labs/04_cafe_argument_extraction.py`로 arguments 추출과 재질문 확인
 13. `learning_unit/10_labs/05_library_multi_tool_rules.py`로 여러 Tool Result와 업무 규칙 확인
 14. `learning_unit/10_labs/06_inventory_reservation_concurrency.py`로 실행 직전 재검증 확인
-15. Provider 비교는 Streamlit의 `Tool 선택`과 `Agent Loop`에서 진행
+15. Provider 비교는 Streamlit의 `Tool 선택`과 `Agent Cycle`에서 진행
 
 ```text
 함수 → Schema → Tool Call → Allowlist → Pydantic 검증
@@ -27,7 +27,7 @@
 
 1. `Tool 선택`에서 Schema와 선택 결과를 확인합니다.
 2. `Tool 실행`에서 정상·날짜 오류·미등록 Tool을 실행합니다.
-3. `Agent Loop`에서 Tool Result가 최종 답변에 사용되는지 확인합니다.
+3. `Agent Cycle`에서 Tool Result가 최종 답변에 사용되는지 확인합니다.
 4. 마지막에만 Gemini·GPT·Ollama/Llama를 선택합니다.
 
 ## 완료 체크

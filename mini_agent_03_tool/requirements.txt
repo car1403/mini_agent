@@ -4,6 +4,7 @@ httpx
 openai
 pydantic
 python-dotenv
+python-multipart
 pytest
 streamlit
 uvicorn

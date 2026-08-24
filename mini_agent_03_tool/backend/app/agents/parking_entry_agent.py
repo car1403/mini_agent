@@ -9,3 +9,4 @@ def extract_parking_request(message: str, explicit_arguments: dict[str, Any] | N
     values = dict(response.content); values.update({k: v for k, v in (explicit_arguments or {}).items() if v not in (None, "")})
     validated = ParkingInput.model_validate(values)
     return validated, {"stage": "parking_agent_extraction", "provider": response.provider, "model": response.model, "latency_ms": response.latency_ms, "data": validated.model_dump()}
+

@@ -230,7 +230,7 @@ User Message → LLM Tool Call → Backend 실행 → Tool Result
 
 ## 실전 Lab
 
-기본 예제 이후에는 API 키 없이 실행할 수 있는 여섯 가지 업무 시나리오로 안전한 Tool 설계를 연습합니다. 자세한 실습 내용과 확장 과제는 [`10_labs/README.md`](10_labs/README.md)를 참고합니다.
+기본 예제 이후에는 API 키 없이 실행할 수 있는 일곱 가지 업무 시나리오로 안전한 Tool 설계를 연습합니다. 자세한 실습 내용과 확장 과제는 [`10_labs/README.md`](10_labs/README.md)를 참고합니다.
 
 | Lab | 파일 | 핵심 개념 |
 |---:|---|---|
@@ -238,15 +238,16 @@ User Message → LLM Tool Call → Backend 실행 → Tool Result
 | 02 | `02_air_conditioner_workflow.py` | Agent가 필요 없는 규칙 기반 Workflow |
 | 03 | `03_parcel_locker_authorization.py` | 인증, 만료, 중복 실행 방지 |
 | 04 | `04_cafe_argument_extraction.py` | arguments 추출, 누락값 재질문 |
-| 05 | `05_library_multi_tool_rules.py` | 여러 Tool Result와 백엔드 업무 규칙 |
+| 05 | `05_library_multi_tool_rules.py` | 상태 기반 조회 Tool 선택과 백엔드 업무 규칙 |
 | 06 | `06_inventory_reservation_concurrency.py` | 실행 직전 재검증, 동시성, 낙관적 잠금 |
+| 07 | `07_travel_planning_agent.py` | 재질문, Multi-Tool 선택, 종료 조건 |
 
 ## 실행
 
 로컬 예제부터 실행합니다.
 
 ```powershell
-cd C:\aidevs\05_llm-agent-orchestration\03_tool-use
+cd C:\mini_agent_st\mini_agent_03_tool\learning_unit
 python .\00_tool_use_concepts.py
 python .\01_tool_schema_validation.py
 python .\02_mock_tool_selection.py
@@ -263,6 +264,7 @@ python .\10_labs\03_parcel_locker_authorization.py
 python .\10_labs\04_cafe_argument_extraction.py
 python .\10_labs\05_library_multi_tool_rules.py
 python .\10_labs\06_inventory_reservation_concurrency.py
+python .\10_labs\07_travel_planning_agent.py
 ```
 
 실제 호출 예제는 Mini Agent Backend를 먼저 실행합니다.
@@ -275,7 +277,7 @@ uvicorn app.main:app --reload --port 8000
 새 PowerShell에서 Provider를 선택합니다.
 
 ```powershell
-cd C:\aidevs\05_llm-agent-orchestration\03_tool-use
+cd C:\mini_agent_st\mini_agent_03_tool\learning_unit
 $env:TOOL_EXAMPLE_PROVIDER="gemini"  # mock, gemini, openai, ollama
 python .\04_current_vs_forecast_selection.py
 python .\05_real_tool_call_inspection.py

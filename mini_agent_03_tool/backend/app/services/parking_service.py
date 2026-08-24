@@ -33,3 +33,4 @@ def _clarify(answer, trace): return {"status": "needs_clarification", "answer": 
 def _stopped(answer, reason, trace=None): return {"status": "rejected", "answer": answer, "state": {}, "trace": trace or [], "reason": reason, "calls": []}
 def _confirm(action, trace): return {"status": "confirmation_required", "answer": "등록 차량입니다. 주차장 문 열기를 확인해 주세요.", "state": {"pending_action_id": action["action_id"], "expires_at": action["expires_at"].isoformat()}, "trace": trace, "reason": "confirmation_required", "calls": [{"tool": action["tool_name"], "arguments": action["arguments"]}]}
 def _done(result, trace, action): return {"status": "completed", "answer": "주차장 문을 열었습니다." if result["opened"] else result["reason"], "state": lab_repository.snapshot("parking"), "trace": trace, "reason": "completed", "calls": [{"tool": action["tool_name"], "arguments": action["arguments"]}]}
+

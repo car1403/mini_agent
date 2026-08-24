@@ -60,3 +60,4 @@ POST /api/labs/reset
 `lab_id=auto`이면 Ollama가 Lab을 분류합니다. 명시적인 Lab ID는 반복 가능한 실습을
 위해 분류 Agent를 거치지 않지만, Workflow 내부의 도메인 Agent는 자연어 arguments를
 계속 추출합니다.
+
