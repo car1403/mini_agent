@@ -12,6 +12,8 @@ from app.services.lab_routing_service import route_and_run
 
 lab_router = APIRouter(prefix="/api/labs", tags=["03 · Tool Use Labs"])
 
+# /api/labs/run
+
 @lab_router.post("/run", response_model=LabRunResponse)
 def run_lab(payload: LabRunRequest) -> LabRunResponse:
     """단일 요청 계약을 Routing Service에 전달합니다.
