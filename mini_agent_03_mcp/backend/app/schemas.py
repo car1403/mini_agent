@@ -8,7 +8,10 @@ class McpRunRequest(BaseModel):
 
 
 class ToolExecutionTrace(BaseModel):
+    round: int
+    server: str
     tool: str
+    public_tool: str
     arguments: dict[str, Any]
     is_error: bool
     result: str

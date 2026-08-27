@@ -45,8 +45,18 @@ def search_hotels(
     if max_price < 1:
         raise ValueError("max_price는 1 이상이어야 합니다.")
     hotels = [
-        {"name": "바다 호텔", "city": "부산", "price": 120_000},
-        {"name": "도시 호텔", "city": "서울", "price": 140_000},
+        {
+            "hotel_id": "hotel-busan-001",
+            "name": "바다 호텔",
+            "city": "부산",
+            "price": 120_000,
+        },
+        {
+            "hotel_id": "hotel-seoul-001",
+            "name": "도시 호텔",
+            "city": "서울",
+            "price": 140_000,
+        },
     ]
     return {
         "items": [

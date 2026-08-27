@@ -7,28 +7,29 @@ FastAPI Backend는 Tool 함수를 직접 import하지 않고 MCP Client를 통�
 ```text
 Streamlit :8501
   → FastAPI Backend :8000
-    → OpenAI Responses API가 Tool 선택
-    → Streamable HTTP MCP Client
-      → Travel MCP Server :8010/mcp
-        → Tool 실행 결과를 GPT가 최종 답변으로 종합
+    → Travel MCP Server :8010/mcp (Streamable HTTP)
+    → Policy MCP Server (stdio 자식 프로세스)
+    → OpenAI Responses API가 한 번에 Tool 하나를 선택
+      → Tool 결과를 돌려주고 필요한 만큼 반복
 ```
 
-MCP Server는 Backend와 독립된 프로세스와 포트에서 실행합니다. `03_mcp`의 stdio
-예제에서 익힌 Tool·Resource를 실제 서비스 경계인 Streamable HTTP로 확장합니다.
+Travel Server는 Backend와 독립된 프로세스와 포트에서 실행합니다. Policy Server는
+Backend가 stdio 자식 프로세스로 실행합니다. 하나의 Agent가 두 Transport를 함께
+사용하면서 Server prefix와 라우팅, 순차 Tool 의존성을 학습합니다.
 
 ## stdio 학습 예제에서 달라지는 점
 
 Tool 구현과 MCP의 `tools/list`·`tools/call` 의미는 바뀌지 않습니다. 달라지는 것은
 Server의 실행 주체와 메시지를 전달하는 Transport입니다.
 
-| 구분 | `aidevs/03_mcp` | `mini_agent_03_mcp` |
+| 구분 | Policy MCP | Travel MCP |
 | --- | --- | --- |
 | Transport | stdio | Streamable HTTP |
-| Server 실행 | Client가 자식 프로세스로 자동 실행 | 첫 번째 터미널에서 독립 실행 |
-| 주소 | 파일 경로와 Python 실행 명령 | `http://127.0.0.1:8010/mcp` |
+| Server 실행 | Backend가 자식 프로세스로 자동 실행 | 첫 번째 터미널에서 독립 실행 |
+| 주소 | Python 파일과 실행 명령 | `http://127.0.0.1:8010/mcp` |
 | 포트 | 없음 | 8010 |
-| Server 수명 | Client 연결과 함께 종료 | Backend와 무관하게 계속 실행 |
-| 주요 목적 | 로컬 MCP 원리 학습 | 서비스 분리·연결 실패·배포 경계 학습 |
+| Server 수명 | Client Session과 함께 종료 | Backend와 무관하게 계속 실행 |
+| 제공 Tool | 호텔 정책 조회 | 날씨·호텔 검색 |
 
 ```text
 stdio
@@ -70,13 +71,14 @@ Backend를 거치며, GPT가 Tool을 제안하고 Backend가 권한 확인·MCP 
 
 ### 0단계 · 호출 구조 확인
 
-코드를 실행하기 전에 다음 세 파일의 역할을 확인합니다.
+코드를 실행하기 전에 다음 네 파일의 역할을 확인합니다.
 
 | 파일 | 역할 |
 | --- | --- |
-| `mcp_server/travel_server.py` | Tool과 Resource를 공개하는 독립 MCP Server |
-| `backend/app/mcp_client.py` | `8010/mcp`에 연결하는 Streamable HTTP Client |
-| `backend/app/agent.py` | 질문에 맞는 Tool을 선택하고 결과로 답변 생성 |
+| `mcp_server/travel_server.py` | 날씨·호텔 Tool과 Resource를 공개하는 HTTP Server |
+| `mcp_server/policy_stdio_server.py` | 호텔 ID로 정책을 조회하는 stdio Server |
+| `backend/app/mcp_client.py` | 두 Transport의 Session을 생성·관리하는 Client |
+| `backend/app/agent.py` | Tool prefix·라우팅과 순차 Agent Loop 관리 |
 
 ### 1단계 · 가상환경과 패키지 준비
 
@@ -145,9 +147,8 @@ Invoke-RestMethod http://127.0.0.1:8000/health
 예상 결과의 핵심 값은 다음과 같습니다.
 
 ```text
-status            : ok
-mcp_transport     : streamable-http
-mcp_server_url    : http://127.0.0.1:8010/mcp
+status      : ok
+mcp_servers : travel=streamable-http, policy=stdio
 ```
 
 ### 5단계 · Backend와 MCP Server 연결 확인
@@ -158,7 +159,7 @@ mcp_server_url    : http://127.0.0.1:8010/mcp
 Invoke-RestMethod http://127.0.0.1:8000/api/mcp/status
 ```
 
-정상이라면 `status=connected`, `tool_count=2`가 표시됩니다. 여기서 503이 발생하면
+정상이라면 `status=connected`, `tool_count=3`이 표시됩니다. 여기서 503이 발생하면
 Frontend를 실행하기 전에 첫 번째 터미널의 MCP Server와 `TRAVEL_MCP_URL`을 먼저
 확인합니다.
 
@@ -171,12 +172,15 @@ Invoke-RestMethod http://127.0.0.1:8000/api/mcp/tools |
     ConvertTo-Json -Depth 10
 ```
 
-`get_current_weather`, `search_hotels`와 각 arguments Schema가 표시돼야 합니다.
+`travel__get_current_weather`, `travel__search_hotels`,
+`policy__get_hotel_policy`와 각 arguments Schema가 표시돼야 합니다.
 
 Agent 전체 흐름을 호출합니다.
 
 ```powershell
-$body = @{ question = "부산 날씨를 확인해 주세요." } | ConvertTo-Json
+$body = @{
+    question = "부산 날씨와 15만원 이하 호텔을 찾고 호텔 정책도 알려 주세요."
+} | ConvertTo-Json
 Invoke-RestMethod `
     -Uri http://127.0.0.1:8000/api/mcp/run `
     -Method Post `
@@ -189,12 +193,12 @@ Invoke-RestMethod `
 
 ```text
 available_tools
-→ 첫 번째 GPT 호출이 Tool 목록을 보고 필요한 Tool 선택
-→ trace[0].tool = get_current_weather
-→ trace[1].tool = search_hotels
-→ Backend가 두 MCP Tool 실행
-→ 두 번째 GPT 호출이 Tool 결과를 종합
-→ llm_calls = 2
+→ travel__get_current_weather
+→ travel__search_hotels
+→ 검색 결과에서 hotel_id 획득
+→ policy__get_hotel_policy(hotel_id)
+→ Function Call이 없는 응답에서 Loop 종료
+→ 일반적으로 llm_calls = Tool 실행 수 + 1
 → answer
 ```
 
@@ -224,9 +228,9 @@ streamlit run frontend\app.py --server.port 8501
 
 1. 상단의 MCP 연결 상태가 `connected`인지 확인합니다.
 2. `MCP Tool 발견`을 눌러 Tool 이름과 Schema를 확인합니다.
-3. `부산 날씨와 15만원 이하 호텔을 찾아 주세요.`로 MCP Agent를 실행합니다.
-4. `GPT 호출 횟수=2`, `실행된 Tool 수=2`인지 확인합니다.
-5. Trace에서 GPT가 선택한 arguments와 MCP Tool Result를 구분합니다.
+3. 기본 질문으로 MCP Agent를 실행합니다.
+4. 한 Round에 Tool이 하나씩 실행되는지 확인합니다.
+5. 호텔 검색 결과의 `hotel_id`가 Policy Tool arguments로 전달되는지 확인합니다.
 6. 질문을 `서울에서 15만원 이하 호텔을 찾아 주세요.`로 바꿔 Tool 선택을 비교합니다.
 7. `수하물 정책 읽기`로 Tool이 아닌 Resource 조회를 확인합니다.
 
@@ -265,6 +269,7 @@ OPENAI_MODEL=gpt-4.1-mini
 
 Frontend는 Backend만 호출하고 MCP Server URL과 실행 권한은 Backend가 관리합니다.
 
-Backend는 MCP에서 발견한 Tool Schema를 OpenAI Responses API에 전달합니다. 첫 번째
-GPT 호출이 필요한 Tool들을 선택하고 Backend가 같은 MCP Session에서 모두 실행한 뒤,
-두 번째 GPT 호출이 Tool 결과만 근거로 최종 답변을 작성합니다.
+Backend는 두 MCP Server에서 발견한 Tool Schema에 Server prefix를 붙여 OpenAI
+Responses API에 전달합니다. `parallel_tool_calls=False`이므로 GPT는 한 Round에 Tool
+하나를 제안합니다. Backend가 Tool 결과를 돌려주면 GPT가 다음 Tool을 선택하며,
+Function Call 없이 답변할 때까지 Agent Loop를 반복합니다.
