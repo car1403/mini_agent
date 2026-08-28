@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  travel-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mini-agent-travel-mcp
+    environment:
+      MCP_HOST: "0.0.0.0"
+      MCP_PORT: "8010"
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "${MCP_SERVER_PORT:-8010}:8010"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health", "||", "exit", "1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

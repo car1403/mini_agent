@@ -16,11 +16,6 @@
             "packageManager": "ms-python.python:pip"
         },
         {
-            "path": "mini_agent_04_rag",
-            "envManager": "ms-python.python:venv",
-            "packageManager": "ms-python.python:pip"
-        },
-        {
             "path": "mini_agent_03_mcp",
             "envManager": "ms-python.python:venv",
             "packageManager": "ms-python.python:pip"
