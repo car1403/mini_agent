@@ -1,4 +1,4 @@
-from app.providers import generate
+from app.services.generation_service import generate
 from app.memory import postgres_store
 from app.memory.mock_store import mock_memory_store
 from app.memory.relevance import relevant_memories
@@ -38,6 +38,7 @@ def personalize(
             used_memories=[],
             answer="이 질문에 사용할 사용자 Memory가 없습니다.",
             provider=provider,
+            trace=[{"stage": "memory_selection", "data": {"count": 0}}],
         )
 
     memory_text = "\n".join(f"- {item.key}: {item.value}" for item in selected)
@@ -57,4 +58,9 @@ def personalize(
         used_memories=selected,
         answer=answer,
         provider=provider,
+        trace=[
+            {"stage": "memory_selection", "data": {"keys": [item.key for item in selected]}},
+            {"stage": "context", "data": {"characters": len(memory_text)}},
+            {"stage": "generation", "data": {"provider": provider}},
+        ],
     )

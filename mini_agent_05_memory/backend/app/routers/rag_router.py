@@ -1,7 +1,7 @@
 import httpx
 from fastapi import APIRouter, HTTPException
 
-from app.config import settings
+from app.core.config import settings
 from app.rag.chunking import split_document
 from app.rag.documents import TRAVEL_DOCUMENTS
 from app.rag.pgvector_store import connect
@@ -12,7 +12,7 @@ from app.schemas import (
 )
 
 
-rag_router = APIRouter(prefix="/api/rag", tags=["RAG"])
+rag_router = APIRouter(prefix="/api/rag", tags=["04 · RAG"])
 
 
 @rag_router.get("/documents")

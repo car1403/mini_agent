@@ -1,5 +1,5 @@
-from app.config import settings
-from app.providers import generate
+from app.core.config import settings
+from app.services.generation_service import generate
 from app.rag.documents import TRAVEL_DOCUMENTS
 from app.rag.embedding import embed
 from app.rag.keyword_store import all_chunks, keyword_search

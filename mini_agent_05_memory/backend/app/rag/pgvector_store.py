@@ -4,7 +4,7 @@ import psycopg
 from pgvector.psycopg import register_vector
 from psycopg.types.json import Jsonb
 
-from app.config import settings
+from app.core.config import settings
 from app.schemas import RagChunk, RagSearchItem
 
 

@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from app.memory.policy import validate_memory_key
+from app.memory.policy import validate_memory
 from app.schemas import MemoryItem
 
 
@@ -9,7 +9,7 @@ class MockMemoryStore:
         self._items: dict[tuple[str, str], MemoryItem] = {}
 
     def upsert(self, user_id: str, key: str, value: str) -> MemoryItem:
-        validate_memory_key(key)
+        validate_memory(key, value)
         identity = (user_id, key)
         current = self._items.get(identity)
         item = MemoryItem(

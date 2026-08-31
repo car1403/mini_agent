@@ -66,6 +66,19 @@ def test_sensitive_memory_key_is_blocked() -> None:
     assert response.status_code == 422
 
 
+def test_sensitive_memory_value_is_blocked() -> None:
+    response = client.post(
+        "/api/memory/items",
+        json={
+            "user_id": "user-a",
+            "key": "hotel_preference",
+            "value": "내 카드번호는 1234-5678-9012-3456",
+            "storage": "mock",
+        },
+    )
+    assert response.status_code == 422
+
+
 def test_personalized_answer_uses_only_relevant_memory() -> None:
     for key, value in [
         ("transportation", "대중교통"),
@@ -82,6 +95,50 @@ def test_personalized_answer_uses_only_relevant_memory() -> None:
     )
     keys = {item["key"] for item in response.json()["used_memories"]}
     assert keys == {"food_restriction"}
+    assert [item["stage"] for item in response.json()["trace"]] == [
+        "memory_selection", "context", "generation",
+    ]
+
+
+def test_redis_session_key_is_scoped_by_user() -> None:
+    from app.memory.redis_store import key
+
+    assert key("user-a", "trip") != key("user-b", "trip")
+
+
+def test_redis_key_does_not_expose_glob_characters() -> None:
+    from app.memory.redis_store import key
+
+    redis_key = key("user-*", "trip:*")
+    assert "user-*" not in redis_key
+    assert "trip:*" not in redis_key
+
+
+def test_session_api_returns_versioned_state(monkeypatch) -> None:
+    from app.memory import redis_store
+
+    monkeypatch.setattr(redis_store, "save", lambda user_id, session_id, state: 1800)
+    response = client.post(
+        "/api/memory/sessions",
+        json={"user_id": "user-a", "session_id": "trip", "state": {"city": "부산"}},
+    )
+    assert response.status_code == 200
+    assert response.json()["user_id"] == "user-a"
+    assert response.json()["state"] == {"version": 0, "city": "부산"}
+
+
+def test_session_version_conflict_returns_409(monkeypatch) -> None:
+    from app.memory import redis_store
+
+    def conflict(*args, **kwargs):
+        raise ValueError("Session version이 다릅니다.")
+
+    monkeypatch.setattr(redis_store, "patch", conflict)
+    response = client.patch(
+        "/api/memory/sessions",
+        json={"user_id": "user-a", "session_id": "trip", "changes": {"city": "제주"}, "expected_version": 0},
+    )
+    assert response.status_code == 409
 
 
 def test_unrelated_question_does_not_use_memory() -> None:
@@ -94,3 +151,4 @@ def test_unrelated_question_does_not_use_memory() -> None:
         json={"user_id": "user-a", "question": "날씨를 알려줘", "storage": "mock", "provider": "mock"},
     )
     assert response.json()["used_memories"] == []
+    assert response.json()["trace"][0]["data"]["count"] == 0
