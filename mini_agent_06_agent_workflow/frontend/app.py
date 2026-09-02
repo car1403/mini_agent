@@ -1,88 +1,76 @@
+import os
+from pathlib import Path
+
+import requests
 import streamlit as st
-
-from core.state import init_state
-from core.ui import render_backend_selector
+from dotenv import load_dotenv
 
 
-st.set_page_config(page_title="Mini Agent 06", page_icon="🕸️", layout="wide")
-init_state()
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(PROJECT_ROOT / ".env")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
-home_page = st.Page("app_pages/01_home.py", title="HOME", default=True)
-environment_page = st.Page("app_pages/02_environment.py", title="환경 상태")
-llm_page = st.Page("app_pages/03_llm.py", title="LLM과 구조화")
-tool_page = st.Page("app_pages/04_tool.py", title="Tool")
-knowledge_page = st.Page("app_pages/05_knowledge_memory.py", title="RAG와 Memory")
-agent_page = st.Page("app_pages/06_agent.py", title="완성 Agent")
-python_workflow_page = st.Page("app_pages/12_python_workflow.py", title="일반 Python Workflow")
-graph_basics_page = st.Page("app_pages/07_graph_basics.py", title="State·Node·Edge")
-branch_page = st.Page("app_pages/08_graph_branch.py", title="조건 분기")
-first_graph_page = st.Page("app_pages/13_first_graph.py", title="첫 번째 Graph")
-reducer_page = st.Page("app_pages/14_reducer.py", title="Reducer")
-loop_page = st.Page("app_pages/09_graph_loop.py", title="반복과 종료")
-checkpoint_page = st.Page("app_pages/10_graph_checkpoint.py", title="Checkpoint")
-compare_page = st.Page("app_pages/11_graph_compare.py", title="Python과 비교")
+st.set_page_config(page_title="Mini Agent 06 · Single Agent Service", page_icon="🤖", layout="wide")
+st.title("Mini Agent 06 · Single Agent Service")
+st.caption("여러 Agent를 제공하지만 Agent끼리 연결하지 않습니다. 사용자가 실행할 Single Agent를 직접 선택합니다.")
 
-pages = [
-    home_page,
-    python_workflow_page,
-    graph_basics_page,
-    branch_page,
-    first_graph_page,
-    reducer_page,
-    loop_page,
-    checkpoint_page,
-    compare_page,
-    environment_page,
-    llm_page,
-    tool_page,
-    knowledge_page,
-    agent_page,
-]
-navigation = st.navigation(pages, position="hidden")
+try:
+    agents_response = requests.get(f"{API_BASE_URL}/api/agents", timeout=5)
+    agents_response.raise_for_status()
+    agents = agents_response.json()
+except requests.RequestException as error:
+    st.error(f"Backend 연결 실패: {error}")
+    st.stop()
 
-with st.sidebar:
-    st.title("🕸️ Mini Agent 06")
-    st.caption("05 과정 · 06_langgraph-workflow")
-    st.page_link(home_page, label="🏠 HOME")
+try:
+    mcp_response = requests.get(f"{API_BASE_URL}/api/agents/mcp-status", timeout=5)
+    mcp_response.raise_for_status()
+    mcp = mcp_response.json()
+except requests.RequestException:
+    st.warning("MCP Tool Server에 연결할 수 없습니다. 8010 포트의 Server를 먼저 실행하세요.")
+else:
+    st.success(f"MCP 연결: {mcp['status']} · Tool {mcp['tool_count']}개")
 
-    st.divider()
-    with st.expander("01. LLM에서 Agent로", expanded=False):
-        st.page_link(llm_page, label="1단계 핵심 복습")
+labels = {agent["agent_id"]: f"{agent['name']} · {agent['goal']}" for agent in agents}
+agent_id = st.selectbox("실행할 Single Agent", options=list(labels), format_func=labels.get)
+selected = next(agent for agent in agents if agent["agent_id"] == agent_id)
 
-    st.divider()
-    with st.expander("02. Prompt와 구조화 출력", expanded=False):
-        st.page_link(llm_page, label="2단계 핵심 복습")
+with st.expander("선택한 Agent의 경계", expanded=True):
+    st.markdown(f"**Goal**  \n{selected['goal']}")
+    st.markdown(f"**설명**  \n{selected['description']}")
+    st.markdown("**허용된 Tool**")
+    st.code("\n".join(selected["allowed_tools"]), language="text")
 
-    st.divider()
-    with st.expander("03. Tool Use", expanded=False):
-        st.page_link(tool_page, label="3단계 핵심 복습")
+question_key = f"question_{agent_id}"
+if question_key not in st.session_state:
+    st.session_state[question_key] = selected["example_question"]
+question = st.text_area("질문", key=question_key, height=100)
 
-    st.divider()
-    with st.expander("04. RAG", expanded=False):
-        st.page_link(knowledge_page, label="4단계 핵심 복습")
+if st.button("선택한 Single Agent 실행", type="primary", use_container_width=True):
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/api/agents/run",
+            json={"agent_id": agent_id, "question": question},
+            timeout=90,
+        )
+        response.raise_for_status()
+        result = response.json()
+    except requests.RequestException as error:
+        st.error(f"Agent 실행 실패: {error}")
+    else:
+        if result["status"] == "completed":
+            st.success(result.get("answer") or "답변이 없습니다.")
+        else:
+            st.error(f"실행 종료: {result['termination_reason']}")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Agent", result["agent_name"])
+        col2.metric("종료 이유", result["termination_reason"])
+        col3.metric("LLM 호출", result["llm_calls"])
+        col4.metric("MCP Tool 호출", result["tool_calls"])
+        st.subheader("Single Agent Trace")
+        for index, item in enumerate(result["trace"], start=1):
+            with st.expander(f"{index}. {item.get('owner', 'system')} · {item.get('stage', 'unknown')}", expanded=True):
+                st.json(item)
 
-    st.divider()
-    with st.expander("05. Memory", expanded=False):
-        st.page_link(knowledge_page, label="5단계 핵심 복습")
-
-    st.divider()
-    with st.expander("06. LangGraph Workflow", expanded=True):
-        st.page_link(python_workflow_page, label="6-1. 일반 Python Workflow")
-        st.page_link(graph_basics_page, label="6-2. State·Node·Edge")
-        st.page_link(branch_page, label="6-3. 조건 분기")
-        st.page_link(first_graph_page, label="6-4. 첫 번째 Graph")
-        st.page_link(reducer_page, label="6-5. Reducer")
-        st.page_link(loop_page, label="6-6. 반복과 안전한 종료")
-        st.page_link(checkpoint_page, label="6-7. Checkpoint와 thread_id")
-        st.page_link(compare_page, label="6-8. Python과 LangGraph 비교")
-
-    st.divider()
-    st.caption("선택 · 완성본 확인")
-    render_backend_selector()
-    st.page_link(environment_page, label="🩺 환경 상태")
-    st.page_link(llm_page, label="🤖 LLM과 구조화")
-    st.page_link(tool_page, label="🧰 Tool")
-    st.page_link(knowledge_page, label="📚 RAG와 Memory")
-    st.page_link(agent_page, label="🧭 완성 Agent")
-
-navigation.run()
+st.divider()
+st.info("현재 Agent 간 메시지, 자동 위임, Coordinator와 공유 State는 없습니다. 다음 Multi-Agent 과정에서 이 경계를 연결합니다.")
