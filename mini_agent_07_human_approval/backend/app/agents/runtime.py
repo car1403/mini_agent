@@ -8,7 +8,7 @@ from app.agents.registry import get_agent
 from app.approval.policies import action_risk
 from app.approval.store import PROCESSED_CALLS, add_audit, get_run, save_run
 from app.core.config import MAX_AGENT_STEPS, OPENAI_MODEL
-from app.mcp.client import call_tool, discover_tools
+from app.mcp.client import call_tool, discover_tools, discover_tools_with_annotations
 from app.providers.openai import create_client, first_response, next_response
 from app.progress.store import publish
 
@@ -25,7 +25,7 @@ def public_result(state: dict[str, Any]) -> dict[str, Any]:
 async def _advance(profile: AgentProfile, state: dict[str, Any], response: Any) -> dict[str, Any]:
     """읽기는 실행하고 변경 Tool 직전에 승인 대기 상태로 중단합니다."""
     client = create_client()
-    tools = await discover_tools(profile.allowed_tools)
+    tools, annotations_by_tool = await discover_tools_with_annotations(profile.allowed_tools)
     for step in range(state.get("next_step", 1), MAX_AGENT_STEPS + 1):
         calls = [item for item in response.output if item.type == "function_call"]
         if not calls:
@@ -54,7 +54,7 @@ async def _advance(profile: AgentProfile, state: dict[str, Any], response: Any) 
             save_run(state)
             return public_result(state)
 
-        risk = action_risk(call.name)
+        risk = action_risk(annotations_by_tool.get(call.name))
         state["trace"].append(
             {"step": step, "owner": "ai_agent", "stage": "model_selected_tool", "tool": call.name, "risk": risk}
         )
@@ -196,7 +196,11 @@ async def resume_after_decision(
     if call_key in PROCESSED_CALLS:
         raise ValueError("이미 실행된 승인 요청입니다.")
     profile = get_agent(state["agent_id"])
-    if pending["tool"] not in profile.allowed_tools or action_risk(pending["tool"]) != "change":
+    _, annotations_by_tool = await discover_tools_with_annotations(profile.allowed_tools)
+    if (
+        pending["tool"] not in profile.allowed_tools
+        or action_risk(annotations_by_tool.get(pending["tool"])) != "change"
+    ):
         raise ValueError("현재 Agent 정책에서 허용된 변경 Tool이 아닙니다.")
 
     result, trace = await call_tool(pending["tool"], pending["arguments"], profile.allowed_tools)

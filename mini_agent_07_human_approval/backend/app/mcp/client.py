@@ -26,12 +26,28 @@ def to_openai_tool(tool: Any) -> dict[str, Any]:
     }
 
 
-async def discover_tools(allowed_tools: frozenset[str] | None = None) -> list[dict[str, Any]]:
+def tool_annotations(tool: Any) -> dict[str, Any] | None:
+    if tool.annotations is None:
+        return None
+    return tool.annotations.model_dump(by_alias=True, exclude_none=True)
+
+
+async def discover_tools_with_annotations(
+    allowed_tools: frozenset[str] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any] | None]]:
     async with tools_session() as session:
         tools = (await session.list_tools()).tools
         if allowed_tools is not None:
             tools = [tool for tool in tools if tool.name in allowed_tools]
-        return [to_openai_tool(tool) for tool in tools]
+        return (
+            [to_openai_tool(tool) for tool in tools],
+            {tool.name: tool_annotations(tool) for tool in tools},
+        )
+
+
+async def discover_tools(allowed_tools: frozenset[str] | None = None) -> list[dict[str, Any]]:
+    tools, _ = await discover_tools_with_annotations(allowed_tools)
+    return tools
 
 
 async def call_tool(

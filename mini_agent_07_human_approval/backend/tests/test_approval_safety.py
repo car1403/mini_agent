@@ -45,9 +45,10 @@ def clear_store():
 
 
 def test_tool_risk_is_deterministic() -> None:
-    assert action_risk("search_product") == "read"
-    assert action_risk("place_order") == "change"
-    assert action_risk("make_payment") == "forbidden"
+    assert action_risk({"readOnlyHint": True}) == "read"
+    assert action_risk({"readOnlyHint": False}) == "change"
+    assert action_risk(None) == "forbidden"
+    assert action_risk({}) == "forbidden"
 
 
 def test_different_actor_is_blocked() -> None:

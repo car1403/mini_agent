@@ -1,15 +1,10 @@
-from typing import Literal
+from typing import Any, Literal
 
 
 Risk = Literal["read", "change", "forbidden"]
 
-CHANGE_TOOLS = frozenset({"place_order"})
-FORBIDDEN_TOOLS = frozenset({"make_payment", "change_user_role"})
-
-
-def action_risk(tool_name: str) -> Risk:
-    if tool_name in FORBIDDEN_TOOLS:
+def action_risk(annotations: dict[str, Any] | None) -> Risk:
+    """신뢰된 MCP Server의 Tool annotation을 보수적으로 판정합니다."""
+    if not annotations or "readOnlyHint" not in annotations:
         return "forbidden"
-    if tool_name in CHANGE_TOOLS:
-        return "change"
-    return "read"
+    return "read" if annotations["readOnlyHint"] is True else "change"

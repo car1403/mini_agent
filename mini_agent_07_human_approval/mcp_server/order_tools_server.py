@@ -3,6 +3,7 @@
 import os
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
@@ -24,7 +25,12 @@ PRODUCTS = {
 PLACED_ORDERS: list[dict] = []
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=False,
+))
 def search_product(query: str) -> dict:
     """상품명으로 상품 ID와 가격을 검색하는 읽기 Tool입니다."""
     normalized = query.strip().lower()
@@ -36,7 +42,12 @@ def search_product(query: str) -> dict:
     return {"success": True, "query": query, "items": items}
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=False,
+))
 def check_inventory(product_id: str) -> dict:
     """상품 ID로 현재 주문 가능한 재고를 확인하는 읽기 Tool입니다."""
     product_id = product_id.strip().upper()
@@ -46,7 +57,12 @@ def check_inventory(product_id: str) -> dict:
     return {"success": True, "product_id": product_id, "stock": data["stock"]}
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=False,
+))
 def calculate_order_total(product_id: str, quantity: int) -> dict:
     """상품과 수량으로 예상 금액을 계산하는 읽기 Tool입니다."""
     product_id = product_id.strip().upper()
@@ -66,7 +82,12 @@ def calculate_order_total(product_id: str, quantity: int) -> dict:
     }
 
 
-@mcp.tool()
+@mcp.tool(annotations=ToolAnnotations(
+    readOnlyHint=False,
+    destructiveHint=False,
+    idempotentHint=False,
+    openWorldHint=False,
+))
 def place_order(product_id: str, quantity: int) -> dict:
     """승인된 주문을 생성하고 재고를 차감하는 변경 Tool입니다."""
     product_id = product_id.strip().upper()
