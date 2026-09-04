@@ -19,6 +19,23 @@ class OpenAIProvider:
         self.model = model
         self.client = OpenAI(api_key=api_key)
 
+    @staticmethod
+    def _normalize_tool_schema(schema: dict[str, Any]) -> dict[str, Any]:
+        normalized = dict(schema)
+        properties = normalized.get("properties")
+        if isinstance(properties, dict):
+            normalized["properties"] = {
+                key: dict(value) if isinstance(value, dict) else value
+                for key, value in properties.items()
+            }
+            required = list(normalized.get("required", []))
+            missing = [key for key in properties if key not in required]
+            if missing:
+                required.extend(missing)
+                normalized["required"] = required
+        normalized["additionalProperties"] = False
+        return normalized
+
     def generate(self, system_prompt: str, message: str) -> ProviderResult:
         response, latency = timed_call(
             lambda: self.client.responses.create(
@@ -59,7 +76,7 @@ class OpenAIProvider:
                 "type": "function",
                 "name": tool["name"],
                 "description": tool["description"],
-                "parameters": tool["input_schema"],
+                "parameters": self._normalize_tool_schema(tool["input_schema"]),
                 "strict": True,
             }
             for tool in tools

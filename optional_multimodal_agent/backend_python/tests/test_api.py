@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.providers.openai_provider import OpenAIProvider
 from app.schemas.models import TravelImageAnalysis
 from app.services.media_service import validate_image
 
@@ -107,6 +108,24 @@ def test_tool_allowlist_blocks_unknown_tool() -> None:
         json={"tool_name": "delete_database", "arguments": {}},
     )
     assert response.status_code == 403
+
+
+def test_openai_tool_schema_sets_additional_properties_for_strict_mode() -> None:
+    provider = object.__new__(OpenAIProvider)
+    schema = {
+        "type": "object",
+        "properties": {
+            "city": {"type": "string"},
+            "category": {"type": "string", "default": "all"},
+        },
+        "required": ["city"],
+    }
+
+    normalized = provider._normalize_tool_schema(schema)
+
+    assert normalized["additionalProperties"] is False
+    assert normalized["required"] == ["city", "category"]
+    assert normalized["properties"]["city"]["type"] == "string"
 
 
 def test_real_provider_selects_tool() -> None:
