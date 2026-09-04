@@ -23,5 +23,4 @@ PROVIDERS = {
     "GPT": "openai",
     "Gemini": "gemini",
     "Ollama/Llama": "ollama",
-    "Mock(개념 확인)": "mock",
 }

@@ -1,14 +1,9 @@
 from app.core.config import settings
-from app.providers.mock import MockProvider
-
-
-SUPPORTED_PROVIDERS = ("mock", "openai", "gemini", "ollama")
+SUPPORTED_PROVIDERS = ("openai", "gemini", "ollama")
 
 
 def get_provider(name: str | None = None):
     selected = (name or settings.llm_provider).lower()
-    if selected == "mock":
-        return MockProvider()
     if selected == "openai":
         from app.providers.openai_provider import OpenAIProvider
 
@@ -33,7 +28,6 @@ def get_provider(name: str | None = None):
 
 def provider_status() -> list[dict]:
     return [
-        {"provider": "mock", "configured": True, "model": "deterministic-travel-mock"},
         {
             "provider": "openai",
             "configured": bool(settings.openai_api_key),

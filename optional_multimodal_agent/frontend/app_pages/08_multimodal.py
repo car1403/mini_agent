@@ -69,7 +69,7 @@ if run:
         st.dataframe(run["trace"], use_container_width=True)
 
     if run.get("requires_approval"):
-        st.warning("교육용 Mock 예약 요청이며 실제 예약은 발생하지 않습니다.")
+        st.warning("승인 결과는 데이터베이스에 기록되며 실제 결제는 발생하지 않습니다.")
         approve, reject = st.columns(2)
         if approve.button("승인"):
             save_agent_run(

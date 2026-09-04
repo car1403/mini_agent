@@ -2,7 +2,9 @@ from datetime import date
 from operator import add
 from typing import Annotated, Any, Literal, TypedDict
 
-from langgraph.checkpoint.memory import InMemorySaver
+import psycopg
+from psycopg.rows import dict_row
+from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
@@ -129,20 +131,16 @@ def create_plan_node(state: TravelAgentState) -> dict:
     warnings = []
     if (nights + 1) * 110000 > int(request["budget"]):
         warnings.append("예상 비용이 입력 예산을 초과해 활동 수를 줄였습니다.")
-    provider_name = state.get("provider", "mock")
-    generated_plan = None
-    provider_model = "deterministic-langgraph-workflow"
-    latency_ms = 0
-    if provider_name != "mock":
-        provider = get_provider(provider_name)
-        llm_result = provider.generate_structured(
-            "검증 가능한 간결한 여행 일정을 생성하세요.",
-            state["message"],
-            TravelPlan,
-        )
-        generated_plan = llm_result.content
-        provider_model = llm_result.model
-        latency_ms = llm_result.latency_ms
+    provider_name = state.get("provider") or settings.llm_provider
+    provider = get_provider(provider_name)
+    llm_result = provider.generate_structured(
+        "검증 가능한 간결한 여행 일정을 생성하세요.",
+        state["message"],
+        TravelPlan,
+    )
+    generated_plan = llm_result.content
+    provider_model = llm_result.model
+    latency_ms = llm_result.latency_ms
     provider_call = {
         "node": "create_plan",
         "provider": provider_name,
@@ -166,7 +164,7 @@ def create_plan_node(state: TravelAgentState) -> dict:
             "memory_used": state["memories"],
             "sources": state["policy_docs"],
             "reservation_draft": {
-                "type": "mock",
+                "type": "reservation_request",
                 "confirmation_required": True,
             },
         },
@@ -182,7 +180,7 @@ def create_plan_node(state: TravelAgentState) -> dict:
 def approval_node(state: TravelAgentState) -> dict:
     decision = interrupt(
         {
-            "question": "교육용 Mock 예약 초안을 승인하시겠습니까?",
+            "question": "예약 요청 초안을 승인하시겠습니까?",
             "reservation_draft": state["result"]["reservation_draft"],
         }
     )
@@ -203,7 +201,7 @@ def approval_node(state: TravelAgentState) -> dict:
         "current_node": "end",
         "requires_approval": False,
         "message_to_user": (
-            "Mock 예약 요청이 기록되었습니다."
+            "예약 요청 승인이 기록되었습니다."
             if approved
             else "요청이 거절되었습니다."
         ),
@@ -233,9 +231,16 @@ builder.add_edge("load_context", "create_plan")
 builder.add_edge("create_plan", "approval")
 builder.add_edge("approval", END)
 
-# 교육 단계에서는 메모리 Checkpointer를 사용합니다.
-# 운영/다중 프로세스 단계에서는 PostgreSQL 또는 Redis Checkpointer로 교체합니다.
-graph = builder.compile(checkpointer=InMemorySaver())
+# 승인 중단 상태도 애플리케이션 프로세스가 아닌 PostgreSQL에 영속화합니다.
+checkpoint_connection = psycopg.Connection.connect(
+    settings.database_url,
+    autocommit=True,
+    prepare_threshold=0,
+    row_factory=dict_row,
+)
+checkpointer = PostgresSaver(checkpoint_connection)
+checkpointer.setup()
+graph = builder.compile(checkpointer=checkpointer)
 
 
 def _config(run_id: str) -> dict:
@@ -255,7 +260,7 @@ def _public_state(run_id: str, state: dict) -> dict:
         "image_analysis": state.get("image_analysis"),
         "result": state.get("result"),
         "message": (
-            "여행 일정과 Mock 예약 요청서가 준비되었습니다."
+            "여행 일정과 예약 요청 초안이 준비되었습니다."
             if waiting
             else state.get("message_to_user", "")
         ),

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 
 from app.core.config import settings
+from app.mcp.client import call_tool, connection_status, discover_tools
 from app.providers.factory import (
     provider_status,
     run_with_optional_fallback,
@@ -28,8 +29,6 @@ from app.services.travel_service import (
     extract_travel_request,
     new_trace_id,
 )
-from app.tools.travel_tools import run_tool
-from app.tools.definitions import TRAVEL_TOOL_DEFINITIONS
 from app.workflows.langgraph_travel_workflow import (
     resume_langgraph_run,
     start_langgraph_run,
@@ -45,12 +44,17 @@ def ok(data: object, trace_id: str | None = None) -> ApiResponse:
 
 @router.get("/health")
 def health() -> dict:
+    try:
+        database_ok = store.healthcheck()
+    except Exception:
+        database_ok = False
     return {
-        "status": "ok",
+        "status": "ok" if database_ok else "degraded",
         "agent_type": "langgraph",
         "mode": settings.app_mode,
         "llm_provider": settings.llm_provider,
         "storage_mode": settings.storage_mode,
+        "database": "connected" if database_ok else "unavailable",
     }
 
 
@@ -159,8 +163,8 @@ async def create_multimodal_agent_run(
 
 
 @router.post("/api/evaluations/run", response_model=ApiResponse)
-def run_evaluation(payload: EvaluationRunRequest) -> ApiResponse:
-    return ok(evaluate_tool_selection(payload.providers))
+async def run_evaluation(payload: EvaluationRunRequest) -> ApiResponse:
+    return ok(await evaluate_tool_selection(payload.providers))
 
 
 @router.post("/api/travel/extract", response_model=ApiResponse)
@@ -168,14 +172,23 @@ def extract(payload: TravelExtractRequest) -> ApiResponse:
     return ok(extract_travel_request(payload.message, payload.reference_date))
 
 
-@router.post("/api/tools/select", response_model=ApiResponse)
-def choose_tool(payload: ToolSelectRequest) -> ApiResponse:
+@router.get("/api/tools/status", response_model=ApiResponse)
+async def tools_status() -> ApiResponse:
     try:
+        return ok(await connection_status())
+    except Exception as error:
+        raise HTTPException(status_code=503, detail=f"MCP Server 연결 실패: {error}") from error
+
+
+@router.post("/api/tools/select", response_model=ApiResponse)
+async def choose_tool(payload: ToolSelectRequest) -> ApiResponse:
+    try:
+        tool_definitions = await discover_tools()
         result = run_with_optional_fallback(
             lambda provider: provider.select_tool(
                 "여행 요청에 필요한 Tool이 있을 때만 하나를 선택하세요.",
                 payload.message,
-                TRAVEL_TOOL_DEFINITIONS,
+                tool_definitions,
             ),
             payload.provider,
         )
@@ -187,9 +200,9 @@ def choose_tool(payload: ToolSelectRequest) -> ApiResponse:
 
 
 @router.post("/api/tools/run", response_model=ApiResponse)
-def execute_tool(payload: ToolRunRequest) -> ApiResponse:
+async def execute_tool(payload: ToolRunRequest) -> ApiResponse:
     try:
-        return ok(run_tool(payload.tool_name, payload.arguments))
+        return ok(await call_tool(payload.tool_name, payload.arguments))
     except PermissionError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error
     except Exception as error:

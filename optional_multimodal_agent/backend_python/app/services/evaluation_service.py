@@ -1,5 +1,5 @@
+from app.mcp.client import discover_tools
 from app.providers.factory import get_provider
-from app.tools.definitions import TRAVEL_TOOL_DEFINITIONS
 
 
 TOOL_SCENARIOS = [
@@ -12,7 +12,8 @@ TOOL_SCENARIOS = [
 ]
 
 
-def evaluate_tool_selection(providers: list[str]) -> dict:
+async def evaluate_tool_selection(providers: list[str]) -> dict:
+    tool_definitions = await discover_tools()
     results = []
     for provider_name in providers:
         rows = []
@@ -22,7 +23,7 @@ def evaluate_tool_selection(providers: list[str]) -> dict:
                 selected = provider.select_tool(
                     "필요한 경우에만 제공된 여행 Tool 중 하나를 선택하세요.",
                     scenario["message"],
-                    TRAVEL_TOOL_DEFINITIONS,
+                    tool_definitions,
                 )
                 rows.append(
                     {

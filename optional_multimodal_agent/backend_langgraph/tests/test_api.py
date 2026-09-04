@@ -28,7 +28,7 @@ if LANGGRAPH_AVAILABLE:
 def test_health() -> None:
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["mode"] == "mock"
+    assert response.json()["mode"] == "real"
 
 
 def test_image_analysis_upload(monkeypatch) -> None:
@@ -89,7 +89,7 @@ def test_multimodal_agent_receives_structured_analysis(monkeypatch) -> None:
         data={
             "user_id": "demo",
             "message": "8월 부산 2박, 성인 2명, 예산 50만 원",
-            "provider": "mock",
+            "provider": "openai",
         },
     )
     assert response.status_code == 200
@@ -233,7 +233,7 @@ def test_langgraph_blocks_wrong_actor_and_duplicate_decision() -> None:
 def test_preparing_trip_is_not_misclassified_as_rain() -> None:
     response = client.post(
         "/api/tools/select",
-        json={"provider": "mock", "message": "부산 여행을 준비해줘"},
+        json={"provider": "openai", "message": "부산 여행을 준비해줘"},
     )
     assert response.status_code == 200
     assert response.json()["data"]["tool_name"] is None

@@ -4,7 +4,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, model_validator
 
 
-ProviderName = Literal["mock", "openai", "gemini", "ollama"]
+ProviderName = Literal["openai", "gemini", "ollama"]
 
 
 class ErrorDetail(BaseModel):

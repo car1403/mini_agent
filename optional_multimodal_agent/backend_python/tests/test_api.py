@@ -11,7 +11,7 @@ client = TestClient(app)
 def test_health() -> None:
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["mode"] == "mock"
+    assert response.json()["mode"] == "real"
 
 
 def test_image_analysis_upload(monkeypatch) -> None:
@@ -72,7 +72,7 @@ def test_multimodal_agent_receives_structured_analysis(monkeypatch) -> None:
         data={
             "user_id": "demo",
             "message": "8월 부산 2박, 성인 2명, 예산 50만 원",
-            "provider": "mock",
+            "provider": "openai",
         },
     )
     assert response.status_code == 200
@@ -109,26 +109,26 @@ def test_tool_allowlist_blocks_unknown_tool() -> None:
     assert response.status_code == 403
 
 
-def test_mock_provider_selects_tool() -> None:
+def test_real_provider_selects_tool() -> None:
     response = client.post(
         "/api/tools/select",
-        json={"provider": "mock", "message": "부산 호텔을 찾아줘"},
+        json={"provider": "openai", "message": "부산 호텔을 찾아줘"},
     )
     assert response.status_code == 200
     data = response.json()["data"]
-    assert data["provider"] == "mock"
+    assert data["provider"] == "openai"
     assert data["tool_name"] == "search_hotels"
 
 
-def test_mock_provider_evaluation() -> None:
+def test_real_provider_evaluation() -> None:
     response = client.post(
         "/api/evaluations/run",
-        json={"providers": ["mock"], "scenario_set": "tool_selection"},
+        json={"providers": ["openai"], "scenario_set": "tool_selection"},
     )
     assert response.status_code == 200
     result = response.json()["data"]["results"][0]
     assert result["status"] == "completed"
-    assert result["accuracy"] == 1.0
+    assert 0.0 <= result["accuracy"] <= 1.0
 
 
 def test_agent_needs_input() -> None:
@@ -185,7 +185,7 @@ def test_agent_blocks_wrong_actor_and_duplicate_decision() -> None:
 def test_preparing_trip_is_not_misclassified_as_rain() -> None:
     response = client.post(
         "/api/tools/select",
-        json={"provider": "mock", "message": "부산 여행을 준비해줘"},
+        json={"provider": "openai", "message": "부산 여행을 준비해줘"},
     )
     assert response.status_code == 200
     assert response.json()["data"]["tool_name"] is None

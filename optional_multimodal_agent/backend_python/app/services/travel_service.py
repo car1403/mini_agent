@@ -83,19 +83,15 @@ def create_agent_run(payload: dict) -> dict:
         estimated_budget = int(extracted["budget"])
     policy_docs = search_policies("숙소 취소 환불", 1)
     memories = store.list_memories(payload["user_id"])
-    generated_plan = None
-    provider_model = "deterministic-python-workflow"
-    provider_latency = 0
-    if provider_name != "mock":
-        provider = get_provider(provider_name)
-        llm_result = provider.generate_structured(
-            "검증 가능한 간결한 여행 일정을 생성하세요.",
-            planning_message,
-            TravelPlan,
-        )
-        generated_plan = llm_result.content
-        provider_model = llm_result.model
-        provider_latency = llm_result.latency_ms
+    provider = get_provider(provider_name)
+    llm_result = provider.generate_structured(
+        "검증 가능한 간결한 여행 일정을 생성하세요.",
+        planning_message,
+        TravelPlan,
+    )
+    generated_plan = llm_result.content
+    provider_model = llm_result.model
+    provider_latency = llm_result.latency_ms
     trace.extend(
         [
             {"node": "load_memory", "status": "completed", "count": len(memories)},
@@ -132,11 +128,11 @@ def create_agent_run(payload: dict) -> dict:
                 "memory_used": memories,
                 "sources": policy_docs,
                 "reservation_draft": {
-                    "type": "mock",
+                    "type": "reservation_request",
                     "confirmation_required": True,
                 },
             },
-            "message": "여행 일정과 Mock 예약 요청서가 준비되었습니다.",
+            "message": "여행 일정과 예약 요청 초안이 준비되었습니다.",
             "requires_approval": True,
             "trace": trace,
         }
@@ -154,7 +150,7 @@ def decide_run(run_id: str, decision: str, actor: str, note: str) -> dict | None
     if actor != run["user_id"]:
         raise ValueError("실행 소유자만 승인하거나 거절할 수 있습니다.")
     status = "completed" if decision == "approve" else "rejected"
-    message = "Mock 예약 요청이 기록되었습니다." if decision == "approve" else "요청이 거절되었습니다."
+    message = "예약 요청 승인이 기록되었습니다." if decision == "approve" else "요청이 거절되었습니다."
     trace = [
         *run["trace"],
         {

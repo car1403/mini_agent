@@ -6,9 +6,14 @@ Backend입니다. `StateGraph`, Node, Conditional Edge, Checkpointer,
 
 ## 실행
 
+LangGraph Agent는 기본적으로 `http://127.0.0.1:8001`에서 실행합니다. 프로젝트
+루트 `.env`의 `LANGGRAPH_AGENT_API_URL`도 같은 주소를 사용해야 합니다.
+Tool 선택과 실행에는 별도로 실행한 Travel Tools MCP Server
+(`http://127.0.0.1:8020/mcp`)가 필요합니다.
+
 ```powershell
-cd C:\mini_agent_st\optional_multimodal_agent\backend_langgraph
-..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8001
+cd C:\mini_agent\optional_multimodal_agent\backend_langgraph
+..\.venv\Scripts\python.exe -m app.main
 ```
 
 ## Graph 흐름
@@ -31,10 +36,10 @@ Provider를 유지합니다.
 ## 승인 재개
 
 1. 최초 실행은 `approval` Node에서 중단됩니다.
-2. `InMemorySaver`가 같은 `thread_id`의 상태를 보존합니다.
+2. PostgreSQL `PostgresSaver`가 같은 `thread_id`의 상태를 보존합니다.
 3. 승인·거절 API가 `Command(resume=...)`로 Graph를 재개합니다.
 
-교육용 기본 Checkpointer는 메모리 방식이므로 Backend를 재시작하면 승인 대기
-상태가 사라집니다. 영속 Checkpointer는 후속 프로젝트에서 연결합니다.
+Checkpoint는 PostgreSQL에 영속화되므로 Backend를 재시작해도 승인 대기 상태를
+같은 `thread_id`로 다시 이어갈 수 있습니다.
 
 공통 API 경로와 요청·응답 구조는 같은 프로젝트의 `backend_python`과 동일합니다.

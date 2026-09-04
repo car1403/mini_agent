@@ -6,9 +6,14 @@ Backend입니다. LangGraph를 사용하지 않으므로 각 단계가 호출되
 
 ## 실행
 
+Python Agent는 기본적으로 `http://127.0.0.1:8000`에서 실행합니다. 프로젝트 루트
+`.env`의 `PYTHON_AGENT_API_URL`도 같은 주소를 사용해야 합니다.
+Tool 선택과 실행에는 별도로 실행한 Travel Tools MCP Server
+(`http://127.0.0.1:8020/mcp`)가 필요합니다.
+
 ```powershell
-cd C:\mini_agent_st\optional_multimodal_agent\backend_python
-..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+cd C:\mini_agent\optional_multimodal_agent\backend_python
+..\.venv\Scripts\python.exe -m app.main
 ```
 
 ## Agent 흐름
@@ -31,7 +36,8 @@ cd C:\mini_agent_st\optional_multimodal_agent\backend_python
 | POST | `/api/providers/travel-plan` | 구조화된 여행 일정 |
 | POST | `/api/travel/extract` | 여행 요청 구조화 |
 | POST | `/api/tools/select` | 선택한 Provider의 Tool Calling |
-| POST | `/api/tools/run` | 허용된 Mock Tool 실행 |
+| GET | `/api/tools/status` | MCP Tool Server 연결 상태 |
+| POST | `/api/tools/run` | MCP Tool Server의 허용된 Tool 실행 |
 | POST | `/api/knowledge/search` | 정책 문서 검색 |
 | GET/POST/DELETE | `/api/users/{user_id}/memories` | Memory 관리 |
 | POST | `/api/agent/runs` | Python Agent 실행 |
@@ -48,5 +54,5 @@ Tool 선택과 Agent 실행 요청에는 선택적으로 `provider`를 전달합
 }
 ```
 
-Tool 실행 API는 Provider와 독립적이며 allowlist와 Pydantic 검증을 통과한
-함수만 실행합니다.
+Tool 실행 API는 Provider와 독립적이며 allowlist를 통과한 요청만 MCP Tool
+Server로 전달합니다. 입력 검증과 PostgreSQL 조회는 MCP Server가 담당합니다.

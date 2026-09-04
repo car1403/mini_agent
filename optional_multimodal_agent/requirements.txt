@@ -2,14 +2,13 @@ fastapi
 google-genai
 httpx
 langgraph
+langgraph-checkpoint-postgres
+mcp>=1.27,<2
 openai
-ollama
-pgvector
 psycopg[binary]
 pydantic
 python-multipart
 python-dotenv
-redis
 streamlit
-uvicorn
+uvicorn[standard]
 pytest

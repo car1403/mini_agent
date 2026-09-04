@@ -9,11 +9,11 @@ load_dotenv()
 
 @dataclass(frozen=True)
 class Settings:
-    app_mode: str = os.getenv("APP_MODE", "mock")
-    llm_provider: str = os.getenv("LLM_PROVIDER", "mock")
-    storage_mode: str = os.getenv("STORAGE_MODE", "memory")
+    app_mode: str = os.getenv("APP_MODE", "real")
+    llm_provider: str = os.getenv("LLM_PROVIDER", "openai")
+    storage_mode: str = os.getenv("STORAGE_MODE", "postgres")
     llm_fallback_enabled: bool = os.getenv("LLM_FALLBACK_ENABLED", "false").lower() == "true"
-    llm_fallback_provider: str = os.getenv("LLM_FALLBACK_PROVIDER", "mock")
+    llm_fallback_provider: str = os.getenv("LLM_FALLBACK_PROVIDER", "openai")
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
     openai_vision_model: str = os.getenv("OPENAI_VISION_MODEL", "gpt-4.1-mini")
@@ -28,10 +28,15 @@ class Settings:
         "DATABASE_URL",
         "postgresql://agent_user:agent_password@127.0.0.1:5433/agent_db",
     )
-    redis_url: str = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
-    redis_ttl_seconds: int = int(os.getenv("REDIS_TTL_SECONDS", "1800"))
     request_timeout_seconds: float = float(os.getenv("REQUEST_TIMEOUT_SECONDS", "30"))
-    max_agent_iterations: int = int(os.getenv("MAX_AGENT_ITERATIONS", "2"))
+    tools_mcp_url: str = os.getenv("TOOLS_MCP_URL", "http://127.0.0.1:8020/mcp")
 
 
 settings = Settings()
+
+if settings.app_mode != "real":
+    raise RuntimeError("APP_MODE는 real만 지원합니다.")
+if settings.storage_mode != "postgres":
+    raise RuntimeError("STORAGE_MODE는 postgres만 지원합니다.")
+if settings.llm_provider not in {"openai", "gemini", "ollama"}:
+    raise RuntimeError("LLM_PROVIDER는 openai, gemini, ollama 중 하나여야 합니다.")

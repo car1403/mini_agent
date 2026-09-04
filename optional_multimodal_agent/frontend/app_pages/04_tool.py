@@ -22,7 +22,7 @@ if st.button("Tool 선택"):
         show_json(data)
 
 st.divider()
-st.subheader("Mock 숙소 검색 Tool")
+st.subheader("PostgreSQL 숙소 검색 Tool")
 city = st.text_input("도시", "부산")
 col1, col2, col3 = st.columns(3)
 check_in = col1.date_input("체크인")

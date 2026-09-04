@@ -1,4 +1,3 @@
-import json
 from uuid import uuid4
 
 import psycopg
@@ -13,6 +12,39 @@ class PostgresStore:
 
     def _connect(self):
         return psycopg.connect(self.database_url)
+
+    def healthcheck(self) -> bool:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            return cursor.fetchone() == (1,)
+
+    def search_documents(self, query: str, limit: int = 3) -> list[dict]:
+        terms = [term for term in query.split() if term]
+        patterns = [f"%{term}%" for term in terms]
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, title, content, source
+                FROM documents
+                WHERE content ILIKE ANY(%s) OR title ILIKE ANY(%s)
+                ORDER BY created_at DESC
+                LIMIT %s
+                """,
+                (patterns, patterns, limit),
+            )
+            rows = cursor.fetchall()
+        return [
+            {"id": str(row[0]), "title": row[1], "content": row[2], "source": row[3]}
+            for row in rows
+        ]
+
+    def get_tool_data(self, tool_name: str, city: str) -> list[dict]:
+        with self._connect() as connection, connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT payload FROM optional_multimodal_travel_tool_data WHERE tool_name = %s AND city = %s ORDER BY updated_at DESC",
+                (tool_name, city),
+            )
+            return [row[0] for row in cursor.fetchall()]
 
     def add_memory(self, user_id: str, key: str, value: str) -> dict:
         memory_id = uuid4()
@@ -61,18 +93,23 @@ class PostgresStore:
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO agent_runs
-                    (id, user_id, provider, model, status, request, result, trace)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO optional_multimodal_agent_runs
+                    (id, user_id, provider, model, status, current_node, request,
+                     image_analysis, result, message, requires_approval, trace)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     run_id,
                     data["user_id"],
-                    data.get("provider", "mock"),
-                    data.get("model", "deterministic-travel-mock"),
+                    data["provider"],
+                    data.get("model", ""),
                     data["status"],
+                    data.get("current_node", "start"),
                     Jsonb(request),
+                    Jsonb(data.get("image_analysis")) if data.get("image_analysis") is not None else None,
                     Jsonb(result) if result is not None else None,
+                    data.get("message", ""),
+                    data.get("requires_approval", False),
                     Jsonb(trace),
                 ),
             )
@@ -82,8 +119,9 @@ class PostgresStore:
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, user_id, provider, model, status, request, result, trace
-                FROM agent_runs WHERE id = %s
+                SELECT id, user_id, provider, model, status, current_node, request,
+                       image_analysis, result, message, requires_approval, trace
+                FROM optional_multimodal_agent_runs WHERE id = %s
                 """,
                 (run_id,),
             )
@@ -96,12 +134,13 @@ class PostgresStore:
             "provider": row[2],
             "model": row[3],
             "status": row[4],
-            "request": row[5],
-            "result": row[6],
-            "trace": row[7],
-            "current_node": row[4],
-            "message": "",
-            "requires_approval": row[4] == "waiting_approval",
+            "current_node": row[5],
+            "request": row[6],
+            "image_analysis": row[7],
+            "result": row[8],
+            "message": row[9],
+            "requires_approval": row[10],
+            "trace": row[11],
         }
 
     def update_run(self, run_id: str, updates: dict) -> dict | None:
@@ -112,13 +151,22 @@ class PostgresStore:
         with self._connect() as connection, connection.cursor() as cursor:
             cursor.execute(
                 """
-                UPDATE agent_runs
-                SET status = %s, result = %s, trace = %s, updated_at = NOW()
+                UPDATE optional_multimodal_agent_runs
+                SET provider = %s, model = %s, status = %s, current_node = %s,
+                    request = %s, image_analysis = %s, result = %s, message = %s,
+                    requires_approval = %s, trace = %s, updated_at = NOW()
                 WHERE id = %s
                 """,
                 (
+                    merged["provider"],
+                    merged.get("model", ""),
                     merged["status"],
+                    merged.get("current_node", "end"),
+                    Jsonb(merged.get("request", {})),
+                    Jsonb(merged.get("image_analysis")) if merged.get("image_analysis") is not None else None,
                     Jsonb(merged.get("result")),
+                    merged.get("message", ""),
+                    merged.get("requires_approval", False),
                     Jsonb(merged.get("trace", [])),
                     run_id,
                 ),

@@ -25,8 +25,9 @@ frontend
    ├─ 03_llm.py
    ├─ 04_tool.py
    ├─ 05_knowledge_memory.py
-   └─ 06_agent.py
-   └─ 07_evaluation.py
+   ├─ 06_agent.py
+   ├─ 07_evaluation.py
+   └─ 08_multimodal.py
 ```
 
 로그인·회원가입은 포함하지 않으며 교육용 `demo-user`를 사용합니다.
@@ -47,24 +48,31 @@ Sidebar의 LLM Provider 선택은 LLM·Tool·Agent 화면에서 공통으로 사
 
 ## Backend 실행
 
-터미널 1:
+터미널 1(MCP Tool Server):
 
 ```powershell
-cd C:\mini_agent_st\optional_multimodal_agent\backend_python
-..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+cd C:\mini_agent\optional_multimodal_agent
+.\.venv\Scripts\python.exe .\mcp_server\travel_tools_server.py
 ```
 
-터미널 2:
+터미널 2(Python Agent):
 
 ```powershell
-cd C:\mini_agent_st\optional_multimodal_agent\backend_langgraph
-..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8001
+cd C:\mini_agent\optional_multimodal_agent\backend_python
+..\.venv\Scripts\python.exe -m app.main
 ```
 
-터미널 3:
+터미널 3(LangGraph Agent):
 
 ```powershell
-cd C:\mini_agent_st\optional_multimodal_agent
+cd C:\mini_agent\optional_multimodal_agent\backend_langgraph
+..\.venv\Scripts\python.exe -m app.main
+```
+
+터미널 4(Streamlit Frontend):
+
+```powershell
+cd C:\mini_agent\optional_multimodal_agent
 .\.venv\Scripts\python.exe -m streamlit run .\frontend\app.py
 ```
 
@@ -73,6 +81,7 @@ cd C:\mini_agent_st\optional_multimodal_agent
 ```dotenv
 PYTHON_AGENT_API_URL=http://127.0.0.1:8000
 LANGGRAPH_AGENT_API_URL=http://127.0.0.1:8001
+TOOLS_MCP_URL=http://127.0.0.1:8020/mcp
 ```
 
 Frontend는 Sidebar에서 선택한 Backend 주소만 변경합니다. API Key와 실행 엔진

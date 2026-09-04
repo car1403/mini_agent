@@ -83,11 +83,11 @@ def create_agent_run(payload: dict) -> dict:
                 "memory_used": memories,
                 "sources": policy_docs,
                 "reservation_draft": {
-                    "type": "mock",
+                    "type": "reservation_request",
                     "confirmation_required": True,
                 },
             },
-            "message": "여행 일정과 Mock 예약 요청서가 준비되었습니다.",
+            "message": "여행 일정과 예약 요청 초안이 준비되었습니다.",
             "requires_approval": True,
             "trace": trace,
         }
@@ -105,7 +105,7 @@ def decide_run(run_id: str, decision: str, actor: str, note: str) -> dict | None
     if actor != run["user_id"]:
         raise ValueError("실행 소유자만 승인하거나 거절할 수 있습니다.")
     status = "completed" if decision == "approve" else "rejected"
-    message = "Mock 예약 요청이 기록되었습니다." if decision == "approve" else "요청이 거절되었습니다."
+    message = "예약 요청 승인이 기록되었습니다." if decision == "approve" else "요청이 거절되었습니다."
     trace = [
         *run["trace"],
         {
