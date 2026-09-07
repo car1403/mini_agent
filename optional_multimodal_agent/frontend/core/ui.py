@@ -30,8 +30,10 @@ def start_run(agent, image, question, audio, speak):
 
 def show_progress(state):
     placeholder = st.empty()
+    progress_bar = st.progress(0)
     started = time.monotonic()
     last_status = "queued"
+    progress_value = 0
     # 실행이 끝날 때까지 이벤트를 받아 같은 표시 영역을 갱신합니다.
     # 사용자 rerun으로 수신이 끊겨도 서버 Worker는 계속 실행합니다.
     for attempt in range(3):
@@ -40,6 +42,10 @@ def show_progress(state):
                 elapsed = int(time.monotonic()-started)
                 if event.get("event")=="heartbeat":
                     placeholder.info(f"{last_status} · 연결 대기 {elapsed}초")
+                    # 작은 진행 표시를 갱신합니다 (대기 중 애니메이션)
+                    if progress_value < 90:
+                        progress_value += 1
+                        progress_bar.progress(min(progress_value, 90))
                     if elapsed>60 and last_status=="queued":
                         st.warning("작업이 대기 중입니다. Agent Worker가 실행 중인지 확인하세요.")
                         return
@@ -55,7 +61,12 @@ def show_progress(state):
                     state["last_id"] = event_id
                     state["events"].append(event["data"])
                 placeholder.info(event["data"].get("message","진행 중"))
+                # 이벤트 수신에 따라 진행바를 채웁니다.
+                if progress_value < 95:
+                    progress_value += 15
+                    progress_bar.progress(min(progress_value, 95))
                 if event["data"].get("status") in {"completed","needs_input","failed"}:
+                    progress_bar.progress(100)
                     return
             return
         except Exception:

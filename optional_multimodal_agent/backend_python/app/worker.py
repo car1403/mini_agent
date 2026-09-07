@@ -15,7 +15,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from backend_python.app.agents.runner import execute
 from backend_python.app.stores.run_store import redis_client, get_run, change
 from backend_python.app.stores.job_queue import initialize, next_job, acknowledge
-from shared.config import RUN_TIMEOUT
+from shared.config import RUN_TIMEOUT, REDIS_URL
 
 async def process(redis, item):
     event_id, fields, recovered = item
@@ -54,7 +54,7 @@ async def main():
 
 if __name__ == "__main__":
     print("Worker started. Ctrl-C to exit.")
-    print("Redis URL:", redis_client.url)
+    print("Redis URL:", REDIS_URL)
     print("Run timeout:", RUN_TIMEOUT)
     print("Project root:", PROJECT_ROOT)
     print("AI Agent Worker is running. Waiting for jobs...")
