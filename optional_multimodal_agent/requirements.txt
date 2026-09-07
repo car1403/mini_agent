@@ -1,14 +1,25 @@
+# Backend API
 fastapi
-google-genai
-httpx
-langgraph
-langgraph-checkpoint-postgres
-mcp>=1.27,<2
-openai
-psycopg[binary]
-pydantic
-python-multipart
-python-dotenv
-streamlit
 uvicorn[standard]
+python-multipart
+
+# Frontend
+streamlit
+
+# AI와 MCP
+openai
+mcp>=1.27,<2
+
+# PostgreSQL, Redis, HTTP 통신
+psycopg[binary]
+redis
+httpx
+
+# 설정, 데이터 검증, 이미지 확인
+python-dotenv
+pydantic
+Pillow
+
+# 자동 테스트
 pytest
+fakeredis

@@ -1,0 +1,14 @@
+fastapi
+google-genai
+httpx
+langgraph
+langgraph-checkpoint-postgres
+mcp>=1.27,<2
+openai
+psycopg[binary]
+pydantic
+python-multipart
+python-dotenv
+streamlit
+uvicorn[standard]
+pytest

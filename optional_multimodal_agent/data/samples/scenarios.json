@@ -1,0 +1,74 @@
+{
+  "_comment": "두 Agent의 수동 실습 시나리오입니다. checks는 자동 채점 규칙이 아닙니다.",
+  "_usage": [
+    "Streamlit에서 image 파일을 올리고 question을 입력합니다.",
+    "완료 후 checks가 분석·RAG·DB 결과에 반영됐는지 확인합니다.",
+    "시설 일정은 seed 기준일에 따라 달라질 수 있습니다."
+  ],
+  "_field_guide": {
+    "id": "시나리오 식별자입니다.",
+    "image": "data/samples 기준 샘플 이미지 상대 경로입니다.",
+    "question": "Agent에 전달할 예제 질문입니다.",
+    "checks": "학습자가 확인할 핵심 동작 목록입니다."
+  },
+  "scenarios": [
+    {
+      "id": "product_basic",
+      "image": "product_labels/MM-K100.png",
+      "question": "사용법과 호환 필터, 매장별 재고를 알려줘.",
+      "checks": [
+        "MM-K100 확인",
+        "매뉴얼 출처",
+        "AC-K10 호환 관계",
+        "재고 조회 시각"
+      ]
+    },
+    {
+      "id": "out_of_stock",
+      "image": "product_labels/MM-A300.png",
+      "question": "필터 교체 시 주의사항과 호환 필터 재고를 알려줘.",
+      "checks": [
+        "필터 물세척 금지",
+        "AC-A30 품절"
+      ]
+    },
+    {
+      "id": "unclear",
+      "image": "product_labels/unclear.png",
+      "question": "사용법 알려줘.",
+      "checks": [
+        "모델 확정 금지",
+        "추가 입력 요청"
+      ]
+    },
+    {
+      "id": "facility_full",
+      "image": "facility_notices/PG-YOGA.png",
+      "question": "초보자도 가능한가요? 오늘부터 28일 동안 토요일 잔여 정원을 알려줘.",
+      "checks": [
+        "초보자 가능",
+        "개인 요가 매트",
+        "첫 회차 마감",
+        "안내문과 DB 차이"
+      ]
+    },
+    {
+      "id": "cancelled",
+      "image": "facility_notices/PG-DRAW.png",
+      "question": "앞으로 28일간 일정과 준비물을 알려줘.",
+      "checks": [
+        "두 번째 회차 취소",
+        "연필과 지우개"
+      ]
+    },
+    {
+      "id": "no_evidence",
+      "image": "product_labels/MM-K100.png",
+      "question": "이 제품의 해외 전압 호환 여부를 알려줘.",
+      "checks": [
+        "근거 없음 표시",
+        "전압 추측 금지"
+      ]
+    }
+  ]
+}

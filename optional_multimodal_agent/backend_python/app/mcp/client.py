@@ -1,63 +1,28 @@
+"""백업 프로젝트의 Streamable HTTP 연결 방식을 사용합니다."""
 import json
 from contextlib import asynccontextmanager
-from typing import Any
-
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
-
-from app.core.config import settings
-
-
-ALLOWED_TOOLS = frozenset({"get_weather", "search_hotels", "search_attractions"})
-
+from shared.config import MCP_URL
 
 @asynccontextmanager
 async def tools_session():
-    async with streamable_http_client(settings.tools_mcp_url) as streams:
-        read_stream, write_stream, _ = streams
-        async with ClientSession(read_stream, write_stream) as session:
+    async with streamable_http_client(MCP_URL) as (read,write,_):
+        async with ClientSession(read,write) as session:
             await session.initialize()
             yield session
 
+async def discover(session, allowed: set[str]) -> list[dict]:
+    return [{"type":"function","function":{"name":t.name,"description":t.description or "",
+             "parameters":t.inputSchema}} for t in (await session.list_tools()).tools if t.name in allowed]
 
-async def discover_tools() -> list[dict[str, Any]]:
-    async with tools_session() as session:
-        tools = [
-            tool for tool in (await session.list_tools()).tools
-            if tool.name in ALLOWED_TOOLS
-        ]
-        return [
-            {
-                "name": tool.name,
-                "description": tool.description or "",
-                "input_schema": tool.inputSchema,
-            }
-            for tool in tools
-        ]
-
-
-async def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    if name not in ALLOWED_TOOLS:
+async def call(session, name: str, arguments: dict, allowed: set[str]) -> dict:
+    if name not in allowed:
         raise PermissionError("허용되지 않은 Tool입니다.")
-    async with tools_session() as session:
-        server_tools = {tool.name for tool in (await session.list_tools()).tools}
-        if name not in server_tools:
-            raise RuntimeError(f"MCP Server가 제공하지 않는 Tool입니다: {name}")
-        result = await session.call_tool(name, arguments=arguments)
-        text = "\n".join(
-            content.text for content in result.content if hasattr(content, "text")
-        )
-        if result.isError:
-            raise RuntimeError(text or "MCP Tool 실행에 실패했습니다.")
-        return json.loads(text) if text else {}
-
-
-async def connection_status() -> dict[str, Any]:
-    tools = await discover_tools()
-    return {
-        "status": "connected",
-        "server": "optional-multimodal-travel-tools",
-        "transport": "streamable-http",
-        "endpoint": settings.tools_mcp_url,
-        "tools": [tool["name"] for tool in tools],
-    }
+    result = await session.call_tool(name,arguments=arguments)
+    if result.isError:
+        raise RuntimeError("MCP Tool 실행에 실패했습니다: " + name)
+    if result.structuredContent is not None:
+        return result.structuredContent
+    text = "\n".join(c.text for c in result.content if hasattr(c,"text"))
+    return json.loads(text) if text else {}

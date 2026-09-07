@@ -1,51 +1,17 @@
-"""mini_frontend와 같은 초보자용 Streamlit 멀티페이지 진입점입니다."""
-
+"""실행: python -m streamlit run frontend/app.py"""
+import sys
+from pathlib import Path
 import streamlit as st
 
-from core.state import init_state
-from core.ui import render_backend_selector
+# Streamlit이 페이지 파일을 실행해도 프로젝트 공통 모듈을 찾도록 합니다.
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0,str(ROOT))
 
-
-st.set_page_config(
-    page_title="Optional Multimodal Agent",
-    page_icon="🧭",
-    layout="wide",
-)
-init_state()
-
-home_page = st.Page("app_pages/01_home.py", title="HOME", default=True)
-environment_page = st.Page("app_pages/02_environment.py", title="환경 상태")
-llm_page = st.Page("app_pages/03_llm.py", title="LLM과 구조화")
-tool_page = st.Page("app_pages/04_tool.py", title="Tool")
-knowledge_page = st.Page("app_pages/05_knowledge_memory.py", title="RAG와 Memory")
-agent_page = st.Page("app_pages/06_agent.py", title="Agent 실행")
-evaluation_page = st.Page("app_pages/07_evaluation.py", title="Provider 평가")
-multimodal_page = st.Page("app_pages/08_multimodal.py", title="이미지와 음성")
-
-pages = [
-    home_page,
-    environment_page,
-    llm_page,
-    tool_page,
-    knowledge_page,
-    agent_page,
-    evaluation_page,
-    multimodal_page,
-]
-
-navigation = st.navigation(pages, position="hidden")
-
-with st.sidebar:
-    st.title("🖼️ Optional Multimodal Agent")
-    render_backend_selector()
-    st.divider()
-    st.page_link(home_page, label="🏠 HOME")
-    st.page_link(environment_page, label="🧰 환경 상태")
-    st.page_link(llm_page, label="🧠 LLM과 구조화")
-    st.page_link(tool_page, label="🛠️ Tool")
-    st.page_link(knowledge_page, label="📚 RAG와 Memory")
-    st.page_link(agent_page, label="🧭 Agent 실행")
-    st.page_link(evaluation_page, label="📊 Provider 평가")
-    st.page_link(multimodal_page, label="🖼️ 이미지와 음성")
-
-navigation.run()
+st.set_page_config(page_title="멀티모달 Agent 실습",page_icon="📷",layout="wide")
+st.sidebar.title("멀티모달 Agent")
+st.sidebar.caption("촬영 → MCP Tool → RAG·DB → 음성 답변")
+st.sidebar.info("모든 제품·시설·재고는 가상 실습 데이터입니다.")
+pages = [st.Page("app_pages/01_product_agent.py",title="제품 촬영 안내",icon="📷"),
+         st.Page("app_pages/02_facility_agent.py",title="안내문 촬영 안내",icon="📄")]
+st.navigation(pages).run()
