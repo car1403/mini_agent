@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 from redis.asyncio import Redis
 from redis.exceptions import WatchError
-from shared.config import REDIS_URL, TTL
+from backend.app.core.config import REDIS_URL, TTL
 
 QUEUE = "mm:jobs"
 TERMINAL = {"completed","needs_input","failed"}

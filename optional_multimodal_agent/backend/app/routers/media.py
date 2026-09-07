@@ -2,8 +2,8 @@ import asyncio
 from typing import Literal
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
-from shared.config import MAX_BYTES
-from shared.media_storage import save, resolve, mime
+from backend.app.core.config import MAX_BYTES
+from backend.app.core.media_storage import save, resolve, mime
 
 router = APIRouter(prefix="/api/media")
 

@@ -1,21 +1,20 @@
-"""backend_python/app 디렉터리에서 실행: python worker.py"""
+"""backend 디렉터리에서 실행: python workers/agent_worker.py"""
 import asyncio
 import logging
 import sys
 from pathlib import Path
 from uuid import uuid4
 
-# 직접 실행하면 이 파일의 디렉터리가 sys.path[0]이 됩니다.
-# 이 상태에서는 app/mcp가 외부 MCP SDK인 mcp보다 먼저 검색되므로 제거합니다.
-APP_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = APP_DIR.parents[1]
-sys.path = [path for path in sys.path if Path(path or ".").resolve() != APP_DIR]
-sys.path.insert(0, str(PROJECT_ROOT))
+# 직접 실행해도 프로젝트 루트의 backend 패키지를 찾을 수 있게 합니다.
+WORKERS_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = WORKERS_DIR.parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend_python.app.agents.runner import execute
-from backend_python.app.stores.run_store import redis_client, get_run, change
-from backend_python.app.stores.job_queue import initialize, next_job, acknowledge
-from shared.config import RUN_TIMEOUT, REDIS_URL
+from backend.app.agents.runner import execute
+from backend.app.stores.run_store import redis_client, get_run, change
+from backend.app.stores.job_queue import initialize, next_job, acknowledge
+from backend.app.core.config import RUN_TIMEOUT
 
 async def process(redis, item):
     event_id, fields, recovered = item
@@ -54,9 +53,8 @@ async def main():
 
 if __name__ == "__main__":
     print("Worker started. Ctrl-C to exit.")
-    print("Redis URL:", REDIS_URL)
     print("Run timeout:", RUN_TIMEOUT)
     print("Project root:", PROJECT_ROOT)
     print("AI Agent Worker is running. Waiting for jobs...")
-    print("send data to Redis queue to start a job. Real-time updates will be sent to the frontend via WebSocket.")
+    print("작업 진행 상황은 Redis에 저장되고 SSE를 통해 화면에 전달됩니다.")
     asyncio.run(main())

@@ -1,5 +1,5 @@
-from shared.media_storage import resolve
-from backend_python.app.stores.run_store import create_run, get_run
+from backend.app.core.media_storage import resolve
+from backend.app.stores.run_store import create_run, get_run
 
 def validate_files(request):
     if resolve(request["image_id"]).suffix not in {".jpg",".png",".webp"}:

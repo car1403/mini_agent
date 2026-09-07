@@ -9,7 +9,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from PIL import Image, ImageDraw, ImageFont
-from shared.config import ROOT
+from scripts.core.config import ROOT
 
 PRODUCTS = [
     ("MM-K100","모아 전기주전자","물을 MIN 0.3L 이상 MAX 1.0L 이하로 채우고 뚜껑을 닫은 뒤 스위치를 누릅니다. 물 없이 작동하지 마세요.","AC-K10"),

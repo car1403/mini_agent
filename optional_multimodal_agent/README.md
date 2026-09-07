@@ -93,31 +93,21 @@ cd C:\mini_agent\optional_multimodal_agent\mcp_server
 ```
 
 ```powershell
-# 터미널 2: FastAPI Backend (권장: backend_python 폴더에서 uvicorn으로 실행)
-cd C:\mini_agent\optional_multimodal_agent\backend_python
-uvicorn app.main:app --reload
-
-# 또는 프로젝트 루트에서(대체):
-..\.venv\Scripts\python.exe -m backend_python.app.main
+# 터미널 2: FastAPI Backend
+cd C:\mini_agent\optional_multimodal_agent\backend
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
 ```powershell
-# 터미널 3: Redis 작업을 처리하는 Agent Worker (권장: 별도 프로세스)
-# 프로젝트 루트에서 모듈로 실행:
-..\.venv\Scripts\python.exe -m backend_python.app.worker
-
-# 또는 backend_python/app 폴더에서 직접 실행:
-cd C:\mini_agent\optional_multimodal_agent\backend_python\app
-..\..\.venv\Scripts\python.exe worker.py
+# 터미널 3: Redis 작업을 처리하는 Agent Worker
+cd C:\mini_agent\optional_multimodal_agent\backend
+..\.venv\Scripts\python.exe workers\agent_worker.py
 ```
 
 ```powershell
-# 터미널 4: Streamlit Frontend (권장: frontend 폴더에서 실행)
+# 터미널 4: Streamlit Frontend
 cd C:\mini_agent\optional_multimodal_agent\frontend
-streamlit run app.py
-
-# 또는 프로젝트 루트에서(대체):
-..\.venv\Scripts\python.exe -m streamlit run frontend/app.py
+..\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
 브라우저에서 `http://localhost:8501`을 엽니다. 카메라 권한을 허용하거나 샘플 이미지를 업로드합니다. 음성 질문은 최대 120초 WAV, 이미지는 JPEG·PNG·WEBP를 지원합니다.
@@ -125,6 +115,7 @@ streamlit run app.py
 서비스 상태 확인:
 
 ```powershell
+cd C:\mini_agent\optional_multimodal_agent
 .\.venv\Scripts\python.exe -m scripts.check_services
 ```
 
@@ -154,9 +145,10 @@ FastAPI SSE → Streamlit 화면 갱신
 ```text
 optional_multimodal_agent/
 ├─ frontend/          Streamlit 화면
-├─ backend_python/    FastAPI, Agent, Worker, Redis·SSE
+├─ backend/           FastAPI, Agent, Worker, Redis·SSE
+│  ├─ app/            API와 Agent 실행 코드
+│  └─ workers/        Redis 작업 처리 프로세스
 ├─ mcp_server/        이미지·음성·RAG·DB Tool
-├─ shared/            공통 설정과 미디어 처리
 ├─ sql/               테이블 생성과 가상 데이터
 ├─ data/rag/          RAG Markdown 문서
 ├─ data/samples/      촬영·업로드용 이미지
@@ -165,17 +157,21 @@ optional_multimodal_agent/
 ```
 
 1. `frontend/app_pages/01_product_agent.py`: 사진과 질문 입력
-2. `backend_python/app/routers/runs.py`: 작업 등록과 SSE API
-3. `backend_python/app/worker.py`: Redis 작업 처리
-4. `backend_python/app/agents/product_agent.py`: Agent 지침과 허용 Tool
-5. `backend_python/app/agents/runner.py`: Tool 호출과 답변 생성
-6. `mcp_server/tools/product_tools.py`: MCP Tool
-7. `mcp_server/database/product_queries.py`: DB 조회
-8. `backend_python/app/stores/`: Redis 상태·이벤트·작업 큐
+2. `backend/app/routers/runs.py`: 작업 등록과 SSE API
+3. `backend/app/core/`: Backend 설정과 미디어 저장·검증
+4. `backend/workers/agent_worker.py`: Redis 작업 처리
+5. `backend/app/agents/product_agent.py`: Agent 지침과 허용 Tool
+6. `backend/app/agents/runner.py`: Tool 호출과 답변 생성
+7. `mcp_server/core/`: MCP 설정과 미디어 읽기
+8. `mcp_server/tools/product_tools.py`: MCP Tool
+9. `mcp_server/database/product_queries.py`: DB 조회
+10. `backend/app/stores/`: Redis 상태·이벤트·작업 큐
 
 ## 7. Frontend와 Backend
 
 Streamlit은 `st.camera_input`, `st.audio_input`, `st.audio`를 사용합니다. Python 코드가 Backend SSE를 수신하므로 별도 HTML이나 JavaScript는 없습니다. 새로고침하면 실행 ID와 마지막 이벤트 ID를 이용해 진행 상태를 복원합니다.
+
+각 프로그램은 자신의 `core/config.py`에서 필요한 환경변수만 읽습니다. Backend가 업로드 파일을 저장하고 MCP Server는 같은 `MEDIA_STORAGE_DIR`에서 파일을 읽거나 생성 음성을 저장합니다.
 
 FastAPI 문서: `http://127.0.0.1:8000/docs`
 

@@ -6,12 +6,12 @@ import sys
 from pathlib import Path
 
 # Ensure the project root (optional_multimodal_agent) is on sys.path so
-# absolute imports like `shared` resolve when running from `backend_python`.
+# absolute imports resolve when running from `backend`.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # Use package-relative imports so `uvicorn app.main:app` works when
-# the current working directory is `backend_python` (module name `app`).
+# the current working directory is `backend` (module name `app`).
 from .stores.run_store import redis_client
 from .routers import media, runs
 
@@ -37,5 +37,5 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     # Run the ASGI app object directly. This is robust whether the
-    # package is addressed as `backend_python.app` or `app`.
+    # package is addressed as `backend.app` or `app`.
     uvicorn.run(app, host="127.0.0.1", port=8000)

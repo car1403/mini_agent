@@ -8,7 +8,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from mcp.server.fastmcp import FastMCP
-from shared.config import env
+from mcp_server.core.config import env
 from mcp_server.tools.image_tools import analyze_scene, read_document
 from mcp_server.tools.audio_tools import transcribe_audio, synthesize_speech
 from mcp_server.tools.product_tools import find_products, get_compatible_accessories, get_product_availability

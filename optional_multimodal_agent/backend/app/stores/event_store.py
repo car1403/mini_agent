@@ -1,5 +1,5 @@
 import json
-from backend_python.app.stores.run_store import event_key, get_run, TERMINAL
+from backend.app.stores.run_store import event_key, get_run, TERMINAL
 
 async def event_stream(redis, run_id, after="0-0"):
     """첫 연결은 전체 재생, 재연결은 마지막 ID 이후부터 읽습니다."""

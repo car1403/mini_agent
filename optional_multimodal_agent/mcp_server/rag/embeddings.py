@@ -1,5 +1,5 @@
 import httpx
-from shared.config import env
+from mcp_server.core.config import env
 
 OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
 MODEL = env("OLLAMA_EMBEDDING_MODEL", "embeddinggemma")

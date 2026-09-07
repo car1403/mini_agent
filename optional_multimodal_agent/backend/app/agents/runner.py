@@ -2,11 +2,11 @@
 import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from backend_python.app.agents import product_agent, facility_agent
-from backend_python.app.mcp.client import tools_session, discover, call
-from backend_python.app.services.llm_service import next_step, final_answer
-from backend_python.app.stores.run_store import change
-from shared.config import MAX_TOOLS
+from backend.app.agents import product_agent, facility_agent
+from backend.app.mcp.client import tools_session, discover, call
+from backend.app.services.llm_service import next_step, final_answer
+from backend.app.stores.run_store import change
+from backend.app.core.config import MAX_TOOLS
 
 async def execute(redis, run):
     request = run["request"]
@@ -31,7 +31,9 @@ async def execute(redis, run):
         if not question.strip():
             question = "사진의 대상을 확인하고 관련 문서와 DB를 이용해 안내해 주세요."
         analysis = await invoke(vision,{"image_id":request["image_id"],"question":question})
-        if analysis.get("needs_new_photo"):
+        # 코드가 읽혔다면 사진에 사용법·재고·일정이 없어도 RAG와 DB 조회를 계속합니다.
+        # needs_new_photo는 대상 코드까지 판독하지 못한 경우에만 중단 조건입니다.
+        if analysis.get("needs_new_photo") and not analysis.get("candidate_codes"):
             return {"status":"needs_input","answer":"사진의 글자나 대상을 확인하기 어렵습니다. 모델명 또는 프로그램 코드가 잘 보이도록 다시 촬영해 주세요.",
                     "speech_text":"사진을 다시 촬영해 주세요.","analysis":analysis,"evidence":evidence}
 

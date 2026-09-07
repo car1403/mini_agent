@@ -1,5 +1,5 @@
 import json
-from shared.config import ROOT
+from scripts.core.config import ROOT
 from scripts.ingest_knowledge import chunks, discover_documents
 from mcp_server.database import knowledge_queries
 

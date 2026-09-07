@@ -2,15 +2,15 @@ import asyncio
 import sys
 from pathlib import Path
 
-# 파일로 직접 실행해도 프로젝트의 shared, backend_python 패키지를 찾게 합니다.
+# 파일로 직접 실행해도 프로젝트의 backend, scripts 패키지를 찾게 합니다.
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import httpx
 import psycopg
-from shared.config import DATABASE_URL, env
-from backend_python.app.stores.run_store import redis_client
-from backend_python.app.mcp.client import tools_session
+from scripts.core.config import DATABASE_URL, env
+from backend.app.stores.run_store import redis_client
+from backend.app.mcp.client import tools_session
 
 async def main():
     failed = False

@@ -8,7 +8,7 @@ def find_project_root(start: Path) -> Path:
     p = start.resolve()
     # 올라가면서 프로젝트 루트로 보이는 디렉터리를 찾습니다.
     for parent in [p] + list(p.parents):
-        if (parent / "backend_python").is_dir() and (parent / "shared").is_dir():
+        if (parent / "backend").is_dir() and (parent / "mcp_server").is_dir():
             return parent
         if (parent / ".env").is_file():
             return parent

@@ -3,7 +3,7 @@ import json
 from contextlib import asynccontextmanager
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
-from shared.config import MCP_URL
+from backend.app.core.config import MCP_URL
 
 @asynccontextmanager
 async def tools_session():

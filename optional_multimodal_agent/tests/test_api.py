@@ -1,8 +1,8 @@
 import io
 import fakeredis.aioredis
 from fastapi.testclient import TestClient
-from backend_python.app.main import app
-from shared import media_storage
+from backend.app.main import app
+from backend.app.core import media_storage
 from tests.test_media import png
 
 def test_upload_run_replay_and_followup(tmp_path,monkeypatch):

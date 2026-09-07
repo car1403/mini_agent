@@ -10,7 +10,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import psycopg
-from shared.config import ROOT, DATABASE_URL
+from scripts.core.config import ROOT, DATABASE_URL
 
 def seed(base_date):
     with psycopg.connect(DATABASE_URL) as conn:

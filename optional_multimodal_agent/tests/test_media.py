@@ -2,8 +2,8 @@ import io
 import wave
 import pytest
 from PIL import Image
-from shared.media_validation import validate
-from shared import media_storage
+from backend.app.core.media_validation import validate
+from backend.app.core import media_storage
 
 def png():
     buffer = io.BytesIO()

@@ -9,7 +9,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import psycopg
-from shared.config import ROOT, DATABASE_URL
+from scripts.core.config import ROOT, DATABASE_URL
 from mcp_server.rag.embeddings import embed, vector_literal, MODEL, DIMENSIONS
 
 RAG_DIRECTORY = ROOT / "data" / "rag"

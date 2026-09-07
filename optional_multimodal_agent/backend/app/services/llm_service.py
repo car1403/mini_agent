@@ -1,5 +1,5 @@
-from shared.config import env, openai_client
-from backend_python.app.schemas import AgentAnswer
+from backend.app.core.config import env, openai_client
+from backend.app.schemas import AgentAnswer
 
 async def next_step(messages: list[dict], tools: list[dict]):
     async with openai_client() as client:

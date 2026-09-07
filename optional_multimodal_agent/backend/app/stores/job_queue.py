@@ -1,6 +1,6 @@
 from redis.exceptions import ResponseError
-from backend_python.app.stores.run_store import QUEUE
-from shared.config import RUN_TIMEOUT
+from backend.app.stores.run_store import QUEUE
+from backend.app.core.config import RUN_TIMEOUT
 
 GROUP = "agents"
 

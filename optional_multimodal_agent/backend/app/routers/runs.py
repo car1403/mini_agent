@@ -1,11 +1,11 @@
 import re
 from fastapi import APIRouter, HTTPException, Request, Header, Query
 from fastapi.responses import StreamingResponse
-from backend_python.app.schemas import RunRequest, AdditionalInput
-from backend_python.app.services.run_service import submit, follow_up
-from backend_python.app.stores.run_store import get_run, change, TERMINAL
-from backend_python.app.stores.event_store import event_stream
-from backend_python.app.mcp.client import tools_session, call
+from backend.app.schemas import RunRequest, AdditionalInput
+from backend.app.services.run_service import submit, follow_up
+from backend.app.stores.run_store import get_run, change, TERMINAL
+from backend.app.stores.event_store import event_stream
+from backend.app.mcp.client import tools_session, call
 
 router = APIRouter(prefix="/api/runs")
 

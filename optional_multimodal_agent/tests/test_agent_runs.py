@@ -3,11 +3,11 @@ import json
 from types import SimpleNamespace
 from contextlib import asynccontextmanager
 import fakeredis.aioredis
-from backend_python.app.stores import run_store as store
-from backend_python.app.stores import job_queue
-from backend_python.app import worker
-from backend_python.app.agents import runner
-from backend_python.app.schemas import AgentAnswer
+from backend.app.stores import run_store as store
+from backend.app.stores import job_queue
+from backend.workers import agent_worker as worker
+from backend.app.agents import runner
+from backend.app.schemas import AgentAnswer
 
 REQUEST = {"agent":"product","image_id":"image","question":"사용법과 재고","audio_id":None,"speak":True}
 
@@ -48,7 +48,7 @@ def test_worker_failure_and_recovery(monkeypatch):
                 assert "secret" not in saved["error"]
     asyncio.run(check())
 
-def test_runner_uses_mcp_and_preserves_text_on_tts_error(monkeypatch):
+def test_runner_continues_when_code_is_read_and_preserves_text_on_tts_error(monkeypatch):
     called = []
     @asynccontextmanager
     async def session():
@@ -60,7 +60,8 @@ def test_runner_uses_mcp_and_preserves_text_on_tts_error(monkeypatch):
         if name=="synthesize_speech":
             raise RuntimeError("tts down")
         if name=="analyze_scene":
-            return {"needs_new_photo":False,"candidate_codes":["MM-K100"]}
+            # 사진에 세부 정보가 없다는 이유로 잘못 true가 와도 코드를 읽었으면 계속합니다.
+            return {"needs_new_photo":True,"candidate_codes":["MM-K100"]}
         return {"items":[{"product_id":"MM-K100"}]}
     class Message:
         def __init__(self,name=None):

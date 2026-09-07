@@ -1,7 +1,7 @@
 import asyncio
 import fakeredis.aioredis
-from backend_python.app.stores.run_store import create_run, change, event_key
-from backend_python.app.stores.event_store import event_stream
+from backend.app.stores.run_store import create_run, change, event_key
+from backend.app.stores.event_store import event_stream
 from frontend.core.sse_client import parse_events
 
 def test_replay_only_after_last_id():

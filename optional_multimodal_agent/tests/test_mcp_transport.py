@@ -6,7 +6,7 @@ import subprocess
 import sys
 import time
 import pytest
-from backend_python.app.mcp import client
+from backend.app.mcp import client
 
 def test_mcp_discovery_and_tool_error(monkeypatch):
     with socket.socket() as sock:
