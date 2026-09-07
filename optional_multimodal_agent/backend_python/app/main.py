@@ -2,8 +2,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from redis.exceptions import RedisError
-from backend_python.app.stores.run_store import redis_client
-from backend_python.app.routers import media, runs
+import sys
+from pathlib import Path
+
+# Ensure the project root (optional_multimodal_agent) is on sys.path so
+# absolute imports like `shared` resolve when running from `backend_python`.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+# Use package-relative imports so `uvicorn app.main:app` works when
+# the current working directory is `backend_python` (module name `app`).
+from .stores.run_store import redis_client
+from .routers import media, runs
 
 @asynccontextmanager
 async def lifespan(app):
@@ -26,4 +36,6 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend_python.app.main:app",host="127.0.0.1",port=8000)
+    # Run the ASGI app object directly. This is robust whether the
+    # package is addressed as `backend_python.app` or `app`.
+    uvicorn.run(app, host="127.0.0.1", port=8000)

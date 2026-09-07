@@ -53,4 +53,10 @@ async def main():
                 await asyncio.sleep(3)
 
 if __name__ == "__main__":
+    print("Worker started. Ctrl-C to exit.")
+    print("Redis URL:", redis_client.url)
+    print("Run timeout:", RUN_TIMEOUT)
+    print("Project root:", PROJECT_ROOT)
+    print("AI Agent Worker is running. Waiting for jobs...")
+    print("send data to Redis queue to start a job. Real-time updates will be sent to the frontend via WebSocket.")
     asyncio.run(main())
